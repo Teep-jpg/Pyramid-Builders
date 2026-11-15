@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Pyramid Works: First-Person Builder</title>
+<title>Pyramid Builder Online</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alfa+Slab+One&family=Barlow+Semi+Condensed:wght@500;600;700&display=swap">
 <style>
 :root{--sky:#9ccbea;--sand:#dcc690;--panel:rgba(252,248,238,.95);--text:#2a2114;--muted:#6d5d45;--accent:#b4540a;--accent-ink:#fff;--line:rgba(60,40,10,.2);--btn:#2a2114;--btn-ink:#fff;
@@ -154,7 +154,7 @@ body.mm #hud,body.mm #top,body.mm #cross,body.mm #prompt,body.mm #hot,body.mm #b
 <div id="hot" class="box"></div><div id="brk"><div id="brkI"><i></i><i></i></div><div id="brkT"><b>Bricks</b><span id="brkS">[LMB] place on the pyramid · [Q] drop one · hold [Q] drop all</span></div><div id="brkN">0 / 0</div></div>
 <div id="mg" class="box"><div id="mgT"></div><div id="mgI"></div><div id="mgM"><div id="mgZ"></div><div id="mgZ2"></div><div id="mgZ3"></div><div id="mgR"></div><div id="mgC"></div></div><div id="mgX"><div id="mgXf"></div></div><div id="mgXt"></div><div id="mgB"></div></div><div id="bp" class="box"></div><div id="hint" class="box">Mouse released · click the game to capture it again</div>
 <div id="main" class="ov"><div class="mwrap">
-<h1 class="mt">Pyramid Works</h1><div class="msub">Mud · Bricks · Glory</div>
+<h1 class="mt">Pyramid Builder Online</h1><div class="msub">Mud · Bricks · Glory</div>
 <div id="mHome" class="mcol"><button class="big" type="button" data-m="single">Single Player</button><button class="big alt" type="button" data-m="multi">Multiplayer</button></div>
 <div id="mSingle" class="mpan"><h2>Single Player · choose a world</h2><div id="slS" class="slg"></div>
 <textarea id="svTx" rows="3" placeholder="Export code appears here · paste an import code here, then press Import on an empty world" spellcheck="false"></textarea><div id="svMsg" class="mm"></div>
@@ -189,7 +189,7 @@ const def=()=>({cr:0,clay:0,st:0,lvl:0,done:0,cols:null,str:0,sxp:0,end:0,exp:0,
 let S=def(),resetting=false;
 /* ---------- save system: 3 slots, checksums, rolling backup, legacy migration, export/import ---------- */
 const uid=()=>Math.random().toString(36).slice(2,8),gid=id=>document.getElementById(id);
-const PK=['clay','st','str','sxp','end','exp','u','rc','pm'],WK=['lvl','done','cols','sl','pt','fn','dr','cr'],SLOTS=3,PRE='pw3:';
+const PK=['clay','st','str','sxp','end','exp','rc','pm','pl'],WK=['lvl','done','cols','sl','pt','fn','dr','cr','u'],SLOTS=3,PRE='pw3:';
 const ls={get:k=>{try{return localStorage.getItem(k)}catch(e){return null}},set:(k,v)=>{try{localStorage.setItem(k,v);return true}catch(e){return false}},del:k=>{try{localStorage.removeItem(k)}catch(e){}}};
 const jp=t=>{try{return JSON.parse(t)}catch(e){return null}};
 const sum=t=>{let h=5381;for(let i=0;i<t.length;i++)h=((h<<5)+h+t.charCodeAt(i))|0;return(h>>>0).toString(36)};
@@ -201,7 +201,7 @@ function writeSlot(n,d){const k=PRE+'slot'+n,old=ls.get(k),t=JSON.stringify({c:s
  return ls.set(k,t)&&ls.get(k)===t}
 function migrate(){if(readSlot(1)||readSlot(2)||readSlot(3))return;const o=jp(ls.get(KEY));if(!o)return;const p={},w={};for(const k of PK)if(k in o)p[k]=o[k];for(const k of WK)if(k in o)w[k]=o[k];writeSlot(1,{v:3,name:'World 1',at:Date.now(),play:0,p,w})}
 let SLOT=Math.min(SLOTS,Math.max(1,+ls.get(PRE+'active')||1)),SNAME='World '+SLOT,PLAY=0,lastSave=0,guest=false;
-function loadSlot(n){const d=readSlot(n);S=def();SNAME='World '+n;PLAY=0;if(d){for(const k of PK)if(d.p&&d.p[k]!==undefined)S[k]=d.p[k];for(const k of WK)if(d.w&&d.w[k]!==undefined)S[k]=d.w[k];SNAME=d.name||SNAME;PLAY=d.play||0;if(d.w&&d.w.cr===undefined&&d.p&&d.p.cr!==undefined)S.cr=d.p.cr}S.u=Object.assign(def().u,S.u)}
+function loadSlot(n){const d=readSlot(n);S=def();SNAME='World '+n;PLAY=0;if(d){for(const k of PK)if(d.p&&d.p[k]!==undefined)S[k]=d.p[k];for(const k of WK)if(d.w&&d.w[k]!==undefined)S[k]=d.w[k];SNAME=d.name||SNAME;PLAY=d.play||0;if(d.w&&d.w.cr===undefined&&d.p&&d.p.cr!==undefined)S.cr=d.p.cr;if(!(d.w&&d.w.u!==undefined)&&d.p&&d.p.u!==undefined)S.u=d.p.u}S.u=Object.assign(def().u,S.u)}
 migrate();loadSlot(SLOT);
 const fmt=n=>{if(n<1000)return n<10&&n%1?n.toFixed(1):Math.floor(n)+'';const s=['K','M','B','T'];let i=-1;while(n>=1000&&i<s.length-1){n/=1000;i++}return n.toFixed(n<10?2:1)+s[i]};
 const money=d=>{if(!d)return;S.cr=Math.max(0,S.cr+d);if(game)send({t:'$',d})};
@@ -368,7 +368,7 @@ const counter=new THREE.Mesh(new THREE.BoxGeometry(8,1.1,1.6),plank);counter.pos
 const standHit=new THREE.Mesh(new THREE.BoxGeometry(9,2,3),hitMat);standHit.position.set(25,1,12);standHit.userData={k:'stand'};scene.add(standHit);
 label('Market stand',25,4.6,12);
 function nearStand(){return Math.hypot(px-25,pz-12)<7}
-function buy(id){const d=UPS.find(u=>u.id===id);if(S.u[id]<d.max&&S.cr>=ucost(d)){money(-ucost(d));S.u[id]++;SFX.coin();upd();if(bpOpen)drawBP()}else SFX.no()}
+function buy(id){const d=UPS.find(u=>u.id===id);if(S.u[id]<d.max&&S.cr>=ucost(d)){money(-ucost(d));S.u[id]++;if(game)send({t:'ug',k:id,l:S.u[id]});SFX.coin();upd();if(bpOpen)drawBP();save()}else SFX.no()}
 const WET=new THREE.Color(0x5a3a22),DRY=new THREE.Color(0xd9bf8a);
 const held=new THREE.Group();held.position.set(.4,-.32,-.65);camera.add(held);
 const bowl=new THREE.Mesh(new THREE.SphereGeometry(.28,18,10,0,Math.PI*2,Math.PI/2,Math.PI/2),new THREE.MeshStandardMaterial({color:0xb5703a,roughness:.8,side:THREE.DoubleSide}));held.add(bowl);
@@ -414,8 +414,12 @@ function pop(t){const p=document.createElement('div');p.className='pop';p.textCo
 function placeAt(i,j){const l=cols[j*base+i],lv=S.lvl;worldPlace(i,j,true);S.st--;NT.pl(i,j,l,lv);save()}
 function worldPlace(i,j,me){
  cols[j*base+i]++;lc[L]++;addInst(i,j,L);
- if(me){money(pay());S.pm=(S.pm||0)+1;pop('+$'+fmt(pay()));SFX.place()}else hiss(.05,.12,900);
- if(lc[L]>=nL(L)){L++;if(L>=layers){const b=Math.round((S.pm||0)*3*pay());SFX.lvl();money(b);S.pm=0;S.lvl++;S.done++;S.cols=null;toast(`Pyramid ${S.done} complete! Your bonus $${fmt(b)} (3× what you placed). A bigger one begins.`);setup()}else toast(`Layer ${L} done. Start layer ${L+1}.`)}
+ if(me){money(pay());S.pm=(S.pm||0)+1;S.pl=(S.pl||0)+1;pop('+$'+fmt(pay()));SFX.place()}else hiss(.05,.12,900);
+ if(lc[L]>=nL(L)){
+  const lb=Math.round(pay()*(10+2*L+3*S.lvl)*(S.pl||0)/nL(L));S.pl=0;if(lb>0)money(lb);L++;
+  if(L>=layers){const b=Math.round(pay()*(120+80*S.lvl)*(S.pm||0)/total);SFX.lvl();if(b>0)money(b);S.pm=0;S.lvl++;S.done++;S.cols=null;toast(`Pyramid ${S.done} complete! Your bonuses: last layer +$${fmt(lb)}, pyramid +$${fmt(b)}. A bigger one begins.`);setup()}
+  else{SFX.lvl();toast(`Layer ${L} done! Your share of the layer bonus: +$${fmt(lb)}. Start layer ${L+1}.`)}
+ }
 }
 
 /* ---------- input ---------- */
@@ -424,13 +428,14 @@ let mg=null,sel=0,build=null,brot=0,qStart=0,qDone=false,qBtn=false,rmbAct=false
 let mode=coarse?'drag':'lock',menuOpen=true,yaw=0,pitch=-.1,px=0,pz=2,ey=1.7,acting=false,tapAct=false,bob=0,jy=0,jv=0;const keys=new Set(),stick={x:0,y:0};
 function setMenu(v){if(!inGame){menuOpen=true;return}menuOpen=v;if(v)endMg();hot.style.display=v?'none':'flex';pauseEl.style.display=v?'flex':'none';if(v){acting=false;keys.clear();qStart=0;pView='main';try{save()}catch(e){}renderPause()}}
 let lockedOnce=false,lockErr=0,freeLook=false,mxp=.5,myp=.5,lockExitT=0;
-function lockMouse(n){n=n||0;if(mode!=='lock'||menuOpen||bpOpen||document.pointerLockElement===canvas||!canvas.requestPointerLock)return;try{const r=canvas.requestPointerLock();if(r&&r.catch)r.catch(()=>{})}catch(e){}if(n<4)setTimeout(()=>lockMouse(n+1),1400)}
-document.addEventListener('pointerlockchange',()=>{if(document.pointerLockElement!==canvas)lockExitT=performance.now();if(document.pointerLockElement===canvas){if(!inGame){document.exitPointerLock();return}lockedOnce=true;freeLook=false;mode='lock';setMenu(false)}else if(mode==='lock'&&!bpOpen&&inGame&&!menuOpen)setMenu(true)});
+function lockMouse(n){n=n||0;if(mode!=='lock'||menuOpen||bpOpen||mg||document.pointerLockElement===canvas||!canvas.requestPointerLock)return;try{const r=canvas.requestPointerLock();if(r&&r.catch)r.catch(()=>{})}catch(e){}if(n<8)setTimeout(()=>lockMouse(n+1),n<3?350:1000)}
+document.addEventListener('pointerlockchange',()=>{if(document.pointerLockElement!==canvas)lockExitT=performance.now();if(document.pointerLockElement===canvas){if(!inGame){document.exitPointerLock();return}lockedOnce=true;freeLook=false;mode='lock';setMenu(false)}else if(mode==='lock'&&!bpOpen&&inGame&&!menuOpen&&!mg)setMenu(true)});
 document.addEventListener('pointerlockerror',()=>{if(!lockedOnce&&++lockErr>=3)freeLook=true});
 document.addEventListener('mousemove',e=>{mxp=e.clientX/innerWidth;myp=e.clientY/innerHeight});
 
 document.addEventListener('mousemove',e=>{if(document.pointerLockElement===canvas){yaw-=e.movementX*.0022*SENS;pitch=cl(pitch-e.movementY*.0022*SENS,-1.5,1.5)}});
-document.addEventListener('mousedown',e=>{if(mode==='lock'&&!menuOpen&&!bpOpen&&document.pointerLockElement!==canvas&&e.target===canvas){lockMouse();if(!freeLook)return}
+document.addEventListener('mousedown',e=>{if(mg&&!menuOpen&&!bpOpen&&e.target===canvas&&e.button===0){if(mg.k==='bench')lift();return}
+ if(mode==='lock'&&!menuOpen&&!bpOpen&&document.pointerLockElement!==canvas&&e.target===canvas){lockMouse();if(!freeLook)return}
  if(document.pointerLockElement===canvas||(freeLook&&!menuOpen&&!bpOpen&&e.target===canvas)){if(e.button===0){if(mg){if(mg.k==='bench')lift()}else{acting=true;tapAct=true}}else if(e.button===2&&!mg)rmbAct=true}});
 addEventListener('contextmenu',e=>e.preventDefault());
 document.addEventListener('mouseup',e=>{if(e.button===0&&mode==='lock')acting=false});
@@ -443,7 +448,7 @@ addEventListener('keydown',e=>{
   if(c==='Escape'||c==='KeyB')closeBP();else if(c==='KeyF'){e.preventDefault();bpQi.focus()}else if(c==='Enter')bpPick(0);else if(m)bpPick(+m[1]-1);
   else if(c==='KeyQ'||c==='ArrowLeft')bpStep(-1);else if(c==='Tab'||c==='ArrowRight'){e.preventDefault();bpStep(1)}else if(c==='KeyE')closeBP();
   return}
- if(e.code==='Escape'){if(performance.now()-lockExitT<250){e.preventDefault();return}if(menuOpen){setMenu(false);lockMouse()}else{setMenu(true);try{document.exitPointerLock()}catch(x){}}e.preventDefault();return}
+ if(e.code==='Escape'){if(performance.now()-lockExitT<250){e.preventDefault();return}if(mg){endMg();e.preventDefault();return}if(menuOpen){setMenu(false);lockMouse()}else{setMenu(true);try{document.exitPointerLock()}catch(x){}}e.preventDefault();return}
  if(e.code==='KeyM'){muted=!muted;toast(muted?'Sound off':'Sound on');return}
  if(!menuOpen&&!mg){if(e.code==='KeyQ'){if(build){if(build.moving)refundBuild();else cancelBuild()}else if(!e.repeat){qStart=performance.now();qDone=false}return}if(e.code==='KeyR'&&build){brot=(brot+1)&3;return}if(e.code==='KeyE'&&sel===2){openBP('bp');return}if(e.code==='KeyE'&&nearStand()){if(S.st>0){toast('Drop your bricks first (Q)');SFX.no()}else openBP('shop');return}}
  if(e.code==='KeyB'){if(menuOpen){setMenu(false);lockMouse()}else if(mode==='lock'&&document.pointerLockElement)document.exitPointerLock();else setMenu(true);return}
@@ -510,7 +515,7 @@ function tipData(){
  if(build){const mv=!!build.moving,l=[[mv?'Refund value $'+fmt(build.moving.paid||0):'Cost $'+fmt(build.cost()),'']];if(bpos&&!bpos.ok)l.push(["Can't place here",'w']);
   return{t:(mv?'Relocating ':'Placing ')+build.name,l,a:[['LMB','Place'],['R','Rotate'],mv?['Q','Refund']:['Q','Cancel']].concat(mv?[['RMB','Cancel move']]:[])}}
  const hs=sel===2,drop=['Q','Drop your bricks first'];
- if(!target){if(!hs&&nearStand())return{t:'Market Stand',l:[['Upgrades for your tools','']],a:S.st>0?[drop]:[['E','Open shop']]};return null}
+ if(!target){if(!hs&&nearStand())return{t:'Market Stand',l:[['Team upgrades, shared by everyone','']],a:S.st>0?[drop]:[['E','Open shop']]};return null}
  const k=target.k;
  if(hs&&!(k==='slot'||k==='fan'||(k==='pit'&&target.p)))return null;
  const reloc=hs?[['RMB','Relocate']]:null;
@@ -527,7 +532,7 @@ function tipData(){
   return{t:target.p?'Mud Pit':'Mud Pit (starting pit)',l,a}}
  if(k==='fan'){return{t:'Standing Fan',l:[['Breeze +100 % - 4.5m','b'],['Two fans stack to ×3 · up to 4','']],a:reloc||[]}}
  if(k==='gym'){const t=target.g==='tread';return{t:t?'Treadmill':'Bench Press',l:[[t?'Endurance Lv '+S.end:'Strength Lv '+S.str,'']],a:S.st>0?[drop]:sel!==0?[['1','Switch to hands to train']]:[['LMB','Train']]}}
- if(k==='stand')return{t:'Market Stand',l:[['Upgrades for your tools','']],a:S.st>0?[drop]:sel!==0?[['1','Switch to hands to shop']]:[['LMB','Open shop']]};
+ if(k==='stand')return{t:'Market Stand',l:[['Team upgrades, shared by everyone','']],a:S.st>0?[drop]:sel!==0?[['1','Switch to hands to shop']]:[['LMB','Open shop']]};
  if(k==='drop'){const l=[['Dropped on the ground','']];let a=[];if(sel!==0)a=[['1','Switch to hands to pick up']];else if(S.st<stCap())a=[['LMB','Pick up']];else l.push(['Stone bag full','w']);return{t:'Brick',l,a}}
  if(k==='cell'){let dn=0;for(let l=0;l<layers;l++)dn+=lc[l];const l=[['Layer '+Math.min(L+1,layers)+' / '+layers,''],[dn+' / '+total+' blocks','']];let a=[];
   if(sel!==0)a=[['1','Switch to hands to place']];else if(S.st>0)a=[['LMB','Place brick (+$'+fmt(pay())+')']];else l.push(['Need a brick from a ready clay mold','w']);return{t:'Pyramid',l,a}}
@@ -542,15 +547,16 @@ function btn(t,f){const b=document.createElement('button');b.type='button';b.tex
 function startMg(k){
  cancelBuild();bghost.visible=grid.visible=false;
  mg={k,over:0,lock:0,pos:0,dir:1,zc:.5,combo:0,fb:'',gain:0,pace:.5,t:0,presses:0,acc:0};
+ try{document.exitPointerLock()}catch(e){}
  const b=k==='bench';if(b)newZone();
- mgT.textContent=b?'Bench press: Strength (X to stop)':'Treadmill: Endurance (X to stop)';mgB.innerHTML='';
+ mgT.textContent=b?'Bench press: Strength (X or Esc to stop)':'Treadmill: Endurance (X or Esc to stop)';mgB.innerHTML='';
   mgC.style.display=mgZ2.style.display=mgZ3.style.display=b?'block':'none';mgR.style.display=b?'none':'block';
  mgZ.style.background=b?'#8fd0a0':'#3aa86a';
  mgEl.style.display='block';
 }
-function endMg(){mg=null;mgEl.style.display='none'}
+function endMg(){mg=null;mgEl.style.display='none';lockMouse()}
 function newZone(){mg.zc=.2+Math.random()*.6}
-const zo=()=>Math.max(.65,1-.015*mg.combo),zg=()=>Math.max(.55,1-.02*mg.combo),zp=()=>Math.max(.5,1-.025*mg.combo);
+const zo=()=>Math.max(.45,1-.02*mg.combo),zg=()=>Math.max(.38,1-.025*mg.combo),zp=()=>Math.max(.32,1-.03*mg.combo);
 function lift(){
  if(!mg||mg.k!=='bench')return;const d=Math.abs(mg.pos-mg.zc);let base=0,nm='';
  if(d<.05*zp()){base=5+Math.floor(mg.combo/3);nm='Perfect!'}else if(d<.12*zg()){base=2+Math.floor(mg.combo/4);nm='Good'}else if(d<.2*zo()){base=1+Math.floor(mg.combo/8);nm='Ok'}
@@ -615,24 +621,24 @@ $('bpTabs').onclick=e=>{const b=e.target.closest('.bt');if(b){bpTab=b.dataset.t;
 $('bpG').onclick=e=>{const c=e.target.closest('.bc');if(c)bpPick(+c.dataset.i)};
 document.addEventListener('mousedown',e=>{if(bpOpen&&e.button===2)closeBP()});
 function bpItems(){
- if(pnl==='shop')return UPS.map(d=>{const m=S.u[d.id]>=d.max;return{id:d.id,tab:'up',cat:'Upgrades',name:d.name,info:d.info,cost:ucost(d),tag:'Lv '+S.u[d.id]+' / '+d.max,dis:m,distxt:'Maxed',go:()=>buy(d.id)}});
+ if(pnl==='shop')return UPS.map(d=>{const m=S.u[d.id]>=d.max;return{id:d.id,tab:'up',cat:'Team upgrade',name:d.name,info:d.info,cost:ucost(d),tag:'Lv '+S.u[d.id]+' / '+d.max,dis:m,distxt:'Maxed',go:()=>buy(d.id)}});
  return BPS.map(d=>({id:d.id,tab:d.id==='box'?'molds':'dry',cat:d.id==='box'?'Clay & Molds':'Drying',name:d.name,info:d.info,cost:d.cost(),tag:'',dis:!d.ok(),distxt:'Max built',
   go:()=>{S.rc=[d.id].concat((S.rc||[]).filter(x=>x!==d.id)).slice(0,6);closeBP();build=d;pick(2);SFX.hammer();toast('Placing '+d.name+': LMB to build · R rotate · Q cancel')}}))}
 function bpPick(i){const it=bpList[i];if(!it)return;if(it.dis||S.cr<it.cost){SFX.no();return}it.go()}
 function bpStep(d){const n=bpTabIds.length;if(n<2)return;bpTab=bpTabIds[(bpTabIds.indexOf(bpTab)+d+n)%n];bpQi.value='';drawBP()}
 function drawBP(){
  const sh=pnl==='shop',all=bpItems(),q=bpQi.value.trim().toLowerCase();
- const tabs=sh?[{id:'up',n:'Upgrades'}]:[{id:'recent',n:'Recent'},{id:'molds',n:'Clay & Molds'},{id:'dry',n:'Drying'}];
+ const tabs=sh?[{id:'up',n:'Team upgrades'}]:[{id:'recent',n:'Recent'},{id:'molds',n:'Clay & Molds'},{id:'dry',n:'Drying'}];
  bpTabIds=tabs.map(t=>t.id);if(!bpTabIds.includes(bpTab))bpTab=bpTabIds[0];
  const inTab=t=>t==='recent'?all.filter(i=>(S.rc||[]).includes(i.id)):all.filter(i=>i.tab===t);
  bpList=q?all.filter(i=>(i.name+' '+i.info).toLowerCase().includes(q)):inTab(bpTab);
  $('bpT').textContent=sh?'MARKET STAND':'BLUEPRINTS';
- $('bpS').textContent=sh?'Upgrades for your tools · paid from your wallet':"The builder's hammer · built where you aim · paid from your wallet";
+ $('bpS').textContent=sh?'Team upgrades · shared by everyone · paid from the team wallet':"The builder's hammer · built where you aim · paid from the team wallet";
  $('bpW').textContent=fmt(S.cr);
  $('bpTabs').innerHTML=tabs.map(t=>`<button type="button" class="bt${t.id===bpTab&&!q?' on':''}" data-t="${t.id}"><span>${t.n}</span><em>${inTab(t.id).length}</em></button>`).join('');
  $('bpH').textContent=q?'Results':tabs.find(t=>t.id===bpTab).n;
  $('bpG').innerHTML=bpList.length?bpList.map((it,i)=>`<div class="bc${it.dis?' dis':''}${!it.dis&&S.cr<it.cost?' poor':''}" data-i="${i}"><div class="bcat">${it.cat}</div><span class="bn">${i+1}</span><div class="bic">${ICONB[it.id]||'🔨'}</div><div class="bnm">${it.name}</div><div class="bds">${it.info}</div><div class="bft">${it.dis?it.distxt:(it.tag?it.tag+' · ':'')+'$'+fmt(it.cost)}<div class="bb"><i style="width:${it.dis?100:Math.min(100,S.cr/it.cost*100)}%"></i></div></div></div>`).join(''):'<div class="bpe">Nothing here yet. Build something from another tab and it will show up under Recent.</div>';
- $('bpF1').textContent=sh?'Click an upgrade to buy it · paid from your wallet':'Pick a blueprint, then [LMB] builds it where you aim · [R] rotates · [RMB] relocates a placed one';
+ $('bpF1').textContent=sh?'Click an upgrade to buy it for the whole team · paid from the team wallet':'Pick a blueprint, then [LMB] builds it where you aim · [R] rotates · [RMB] relocates a placed one';
 }
 function openBP(k){pnl=k||'bp';bpTab=pnl==='shop'?'up':'molds';bpQi.value='';bpOpen=true;acting=false;keys.clear();drawBP();bp.style.display='flex';SFX.hammer();try{if(document.pointerLockElement)document.exitPointerLock()}catch(e){}}
 function closeBP(){bpOpen=false;bp.style.display='none';bpQi.blur();lockMouse()}
@@ -694,18 +700,19 @@ function entApply(d){if(!d||typeof d.u!=='string'||!Number.isFinite(d.x)||!Numbe
 function entRemove(k,u){const e=ent(k,u);if(!e||u==='p0')return;if(k==='box'){scene.remove(e.g);slots.splice(slots.indexOf(e),1)}else if(k==='fan'){scene.remove(e.g);fans.splice(fans.indexOf(e),1)}else if(k==='pit'){scene.remove(e);pits.splice(pits.indexOf(e),1)}else{scene.remove(e);drops.splice(drops.indexOf(e),1)}}
 function send(o){if(!game)return;game.emit('w',o).catch(()=>{if(!netErr){netErr=true;toast('Co-op messages could not be sent. Check your connection.')}})}
 const NT={up(k,e){if(game)send({t:'u',d:entData(k,e)})},rm(k,u){if(game)send({t:'x',k,u})},pl(i,j,l,lv){if(game)send({t:'p',i,j,l,lv})}};
-const hash=()=>{let h=S.lvl*1009+S.done;for(let a=0;a<cols.length;a++)h=(h*31+cols[a])|0;return h+slots.length*7+pits.length*11+fans.length*13+drops.length*17};
+const hash=()=>{let h=S.lvl*1009+S.done;for(let a=0;a<cols.length;a++)h=(h*31+cols[a])|0;return h+slots.length*7+pits.length*11+fans.length*13+drops.length*17+((S.u.sun|0)*19+(S.u.pay|0)*23+(S.u.boots|0)*29)};
 function respond(){if(!game)return false;const ps=gpeers.filter(p=>p.kind==='viewer'),h=ps.find(p=>p.presence&&p.presence.h);if(h)return h.isMe;const m=ps.slice().sort((a,b)=>a.peer<b.peer?-1:1)[0];return !!m&&m.isMe}
 function sendSnap(){if(Date.now()-lastSnapOut<1500)return;lastSnapOut=Date.now();collect();const w={};for(const k of WK)w[k]=S[k];const t=JSON.stringify(w),id=uid(),n=Math.ceil(t.length/2800);for(let i=0;i<n;i++)send({t:'sn',id,i,n,d:t.slice(i*2800,(i+1)*2800)})}
 function onSnap(o){if(isHost||typeof o.d!=='string'||!(o.n>0&&o.n<20))return;if(!snapBuf||snapBuf.id!==o.id)snapBuf={id:o.id,n:o.n,p:{},c:0};if(snapBuf.p[o.i]===undefined){snapBuf.p[o.i]=o.d;snapBuf.c++}
  if(snapBuf.c===snapBuf.n){let t='';for(let i=0;i<snapBuf.n;i++)t+=snapBuf.p[i];snapBuf=null;const w=jp(t);if(w&&typeof w==='object')applyWorld(w)}}
 function clearEnts(){for(const s of slots)scene.remove(s.g);slots.length=0;for(const f of fans)scene.remove(f.g);fans.length=0;for(const p of pits.slice(1))scene.remove(p);pits.length=1;for(const m of drops)scene.remove(m);drops.length=0}
-function applyWorld(w){cancelBuild();clearEnts();for(const k of WK)if(k in w)S[k]=w[k];setup();loadWorldEnts();lastSnapAt=Date.now();if(!snapOk){snapOk=true;S.pm=0;toast('Connected to room '+gcode.toUpperCase()+' · world synced')}upd()}
+function applyWorld(w){cancelBuild();clearEnts();for(const k of WK)if(k in w)S[k]=w[k];S.u=Object.assign(def().u,S.u);setup();loadWorldEnts();lastSnapAt=Date.now();if(!snapOk){snapOk=true;S.pm=0;toast('Connected to room '+gcode.toUpperCase()+' · world synced')}upd()}
 function requestSnap(){if(!game||isHost)return;send({t:'rq'});snapTry++;clearTimeout(snapTimer);if(!snapOk){if(snapTry<8)snapTimer=setTimeout(requestSnap,2500);else{leaveGame(true,'Could not sync the host\'s world')}}}
 function onMsg(m){const o=m.data;if(!o||typeof o!=='object')return;
  if(o.t==='p'){if(Number.isInteger(o.i)&&Number.isInteger(o.j)&&o.i>=0&&o.j>=0&&o.i<base&&o.j<base&&o.lv===S.lvl&&o.l===L&&cols[o.j*base+o.i]===o.l)worldPlace(o.i,o.j,false);else if(snapOk||isHost)throttleSnap()}
  else if(o.t==='u')entApply(o.d);else if(o.t==='x'&&typeof o.u==='string')entRemove(o.k,o.u);
  else if(o.t==='rq'){if(respond())sendSnap()}else if(o.t==='sn')onSnap(o);
+ else if(o.t==='ug'){const d=UPS.find(u=>u.id===o.k);if(d&&Number.isInteger(o.l)&&o.l>S.u[d.id]&&o.l<=d.max){S.u[d.id]=o.l;toast('Team upgrade: '+d.name+' is now level '+o.l);upd();if(bpOpen)drawBP()}}
  else if(o.t==='$'){if(Number.isFinite(o.d)){S.cr=Math.max(0,S.cr+cl(o.d,-1e9,1e9));const w=document.getElementById('bpW');if(bpOpen&&w)w.textContent=fmt(S.cr);upd()}}
  else if(o.t==='hb'){if(!isHost&&snapOk&&o.h!==hash())throttleSnap()}}
 function throttleSnap(){if(isHost||Date.now()-lastSnapAt<8000)return;lastSnapAt=Date.now();send({t:'rq'})}
