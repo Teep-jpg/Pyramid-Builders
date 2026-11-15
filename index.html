@@ -176,7 +176,7 @@ body.mm #hud,body.mm #top,body.mm #cross,body.mm #prompt,body.mm #hot,body.mm #b
 <div class="row"><label>Mouse sensitivity</label><input type="range" id="oSens" min="0.3" max="2.5" step="0.05"><span class="rv" id="oSensV"></span></div>
 <div class="row"><label>Field of view</label><input type="range" id="oFov" min="60" max="100" step="1"><span class="rv" id="oFovV"></span></div>
 <div class="how"><p><b>How to play.</b> Scoop clay from the pit, pour it into clay molds (1 kg per brick) and let it bake. Carry the bricks to the pyramid and place them for pay.</p>
-<p><b>Bench press</b> (Strength): hit Space in the green. <b>Treadmill</b> (Endurance): spam Space to stay ahead of the red line. <b>Market stand</b>: click it or press E nearby.</p>
+<p><b>Bench press</b> (Strength): hit Space in the green. <b>Treadmill</b> (Endurance): spam W to stay ahead of the red line. <b>Market stand</b>: click it or press E nearby.</p>
 <p><b>Hammer</b> (3): E opens blueprints · LMB places · R rotates · RMB relocates · Q refunds while relocating.</p>
 <p><b>WASD</b> move · <b>Shift</b> sprint · <b>Space</b> jump · <b>mouse</b> look · <b>click</b>/<b>F</b> act · <b>1 2 3</b> hands, bowl, hammer · <b>Q</b> drop a brick (hold: drop all) · <b>M</b> sound · <b>Esc</b> pause.</p></div>
 <button class="pb" type="button" data-p="back">Back</button></div>
@@ -206,7 +206,7 @@ migrate();loadSlot(SLOT);
 const fmt=n=>{if(n<1000)return n<10&&n%1?n.toFixed(1):Math.floor(n)+'';const s=['K','M','B','T'];let i=-1;while(n>=1000&&i<s.length-1){n/=1000;i++}return n.toFixed(n<10?2:1)+s[i]};
 const money=d=>{if(!d)return;S.cr=Math.max(0,S.cr+d);if(game)send({t:'$',d})};
 const cl=(v,a,b)=>Math.min(b,Math.max(a,v)),kg=n=>''+Math.round(n*100)/100,gk=n=>n<1-1e-9?Math.round(n*1000)+' g':(t=>t.endsWith('.')?t+'0':t)(n.toFixed(3).replace(/0+$/,''))+' kg';
-const bowlCap=()=>1+.5*S.str,stCap=()=>3+2*S.str,need=l=>Math.floor(12*1.45**l),dryT=()=>8*.78**S.u.sun,pay=()=>1.6**S.u.pay,spd=()=>5.5*1.12**S.u.boots*(1+.03*Math.min(S.end,40)),jumpV=()=>7.5+Math.min(.1*S.end,2),wmul=()=>Math.max(.45,1-.06*Math.max(0,S.st+S.clay-(2+S.str))),scoop=()=>.325,boxCost=()=>Math.ceil(20*1.35**Math.max(0,slots.length-9)),pitCost=()=>Math.ceil(60*2**(pits.length-1)),fanCost=()=>Math.ceil(80*1.8**fans.length),MAXBOX=20,MAXPIT=4;
+const bowlCap=()=>1+.5*S.str,stCap=()=>3+S.str,slowK=()=>Math.min(4,Math.max(1,Math.round(stCap()/4))),slowAt=()=>stCap()-slowK(),need=l=>Math.floor(12*1.42**l),dryT=()=>8*.78**S.u.sun,pay=()=>1.6**S.u.pay,spd=()=>5.5*1.12**S.u.boots*(1+.03*Math.min(S.end,40)),jumpV=()=>7.5+Math.min(.1*S.end,2),wmul=()=>Math.max(.45,1-.06*Math.max(0,S.st+S.clay-slowAt())),scoop=()=>.325,boxCost=()=>Math.ceil(20*1.35**Math.max(0,slots.length-9)),pitCost=()=>Math.ceil(60*2**(pits.length-1)),fanCost=()=>Math.ceil(80*1.8**fans.length),MAXBOX=20,MAXPIT=4;
 const UPS=[
 {id:'sun',name:'Sun-bleached lime',base:40,g:2.5,max:5,info:'Mud dries 22% faster'},
 {id:'pay',name:'Master mason pay',base:60,g:3,max:12,info:'Each placed stone pays ×1.6'},
@@ -423,15 +423,15 @@ const coarse=false;
 let mg=null,sel=0,build=null,brot=0,qStart=0,qDone=false,qBtn=false,rmbAct=false;const hot=document.getElementById('hot');
 let mode=coarse?'drag':'lock',menuOpen=true,yaw=0,pitch=-.1,px=0,pz=2,ey=1.7,acting=false,tapAct=false,bob=0,jy=0,jv=0;const keys=new Set(),stick={x:0,y:0};
 function setMenu(v){if(!inGame){menuOpen=true;return}menuOpen=v;if(v)endMg();hot.style.display=v?'none':'flex';pauseEl.style.display=v?'flex':'none';if(v){acting=false;keys.clear();qStart=0;pView='main';try{save()}catch(e){}renderPause()}}
-let lockedOnce=false,lockErr=0,freeLook=false,mxp=.5,myp=.5;
+let lockedOnce=false,lockErr=0,freeLook=false,mxp=.5,myp=.5,lockExitT=0;
 function lockMouse(n){n=n||0;if(mode!=='lock'||menuOpen||bpOpen||document.pointerLockElement===canvas||!canvas.requestPointerLock)return;try{const r=canvas.requestPointerLock();if(r&&r.catch)r.catch(()=>{})}catch(e){}if(n<4)setTimeout(()=>lockMouse(n+1),1400)}
-document.addEventListener('pointerlockchange',()=>{if(document.pointerLockElement===canvas){if(!inGame){document.exitPointerLock();return}lockedOnce=true;freeLook=false;mode='lock';setMenu(false)}else if(mode==='lock'&&!bpOpen&&inGame&&!menuOpen)setMenu(true)});
+document.addEventListener('pointerlockchange',()=>{if(document.pointerLockElement!==canvas)lockExitT=performance.now();if(document.pointerLockElement===canvas){if(!inGame){document.exitPointerLock();return}lockedOnce=true;freeLook=false;mode='lock';setMenu(false)}else if(mode==='lock'&&!bpOpen&&inGame&&!menuOpen)setMenu(true)});
 document.addEventListener('pointerlockerror',()=>{if(!lockedOnce&&++lockErr>=3)freeLook=true});
 document.addEventListener('mousemove',e=>{mxp=e.clientX/innerWidth;myp=e.clientY/innerHeight});
 
 document.addEventListener('mousemove',e=>{if(document.pointerLockElement===canvas){yaw-=e.movementX*.0022*SENS;pitch=cl(pitch-e.movementY*.0022*SENS,-1.5,1.5)}});
 document.addEventListener('mousedown',e=>{if(mode==='lock'&&!menuOpen&&!bpOpen&&document.pointerLockElement!==canvas&&e.target===canvas){lockMouse();if(!freeLook)return}
- if(document.pointerLockElement===canvas||(freeLook&&!menuOpen&&!bpOpen&&e.target===canvas)){if(e.button===0){if(mg){mg.k==='bench'?lift():run()}else{acting=true;tapAct=true}}else if(e.button===2&&!mg)rmbAct=true}});
+ if(document.pointerLockElement===canvas||(freeLook&&!menuOpen&&!bpOpen&&e.target===canvas)){if(e.button===0){if(mg){if(mg.k==='bench')lift()}else{acting=true;tapAct=true}}else if(e.button===2&&!mg)rmbAct=true}});
 addEventListener('contextmenu',e=>e.preventDefault());
 document.addEventListener('mouseup',e=>{if(e.button===0&&mode==='lock')acting=false});
 addEventListener('keydown',e=>{
@@ -441,13 +441,13 @@ addEventListener('keydown',e=>{
   if(document.activeElement===bpQi){if(e.code==='Escape')bpQi.blur();else if(e.code==='Enter')bpPick(0);return}
   const c=e.code,m=/^Digit([1-9])$/.exec(c);
   if(c==='Escape'||c==='KeyB')closeBP();else if(c==='KeyF'){e.preventDefault();bpQi.focus()}else if(c==='Enter')bpPick(0);else if(m)bpPick(+m[1]-1);
-  else if(c==='KeyQ'||c==='ArrowLeft')bpStep(-1);else if(c==='KeyE'||c==='ArrowRight')bpStep(1);
+  else if(c==='KeyQ'||c==='ArrowLeft')bpStep(-1);else if(c==='Tab'||c==='ArrowRight'){e.preventDefault();bpStep(1)}else if(c==='KeyE')closeBP();
   return}
- if(e.code==='Escape'){if(menuOpen){if(pView==='opt'){pView='main';renderPause()}else{setMenu(false);lockMouse()}}else{setMenu(true);try{document.exitPointerLock()}catch(x){}}e.preventDefault();return}
+ if(e.code==='Escape'){if(performance.now()-lockExitT<250){e.preventDefault();return}if(menuOpen){setMenu(false);lockMouse()}else{setMenu(true);try{document.exitPointerLock()}catch(x){}}e.preventDefault();return}
  if(e.code==='KeyM'){muted=!muted;toast(muted?'Sound off':'Sound on');return}
  if(!menuOpen&&!mg){if(e.code==='KeyQ'){if(build){if(build.moving)refundBuild();else cancelBuild()}else if(!e.repeat){qStart=performance.now();qDone=false}return}if(e.code==='KeyR'&&build){brot=(brot+1)&3;return}if(e.code==='KeyE'&&sel===2){openBP('bp');return}if(e.code==='KeyE'&&nearStand()){if(S.st>0){toast('Drop your bricks first (Q)');SFX.no()}else openBP('shop');return}}
- if(e.code==='KeyB'){if(mode==='lock'&&document.pointerLockElement)document.exitPointerLock();else setMenu(!menuOpen);return}
- if(mg){if(e.repeat){e.preventDefault();return}if(e.code==='KeyX'){endMg()}else if(e.code==='Space'||e.code==='Enter'){mg.k==='bench'?lift():run()}e.preventDefault();return}
+ if(e.code==='KeyB'){if(menuOpen){setMenu(false);lockMouse()}else if(mode==='lock'&&document.pointerLockElement)document.exitPointerLock();else setMenu(true);return}
+ if(mg){if(e.repeat){e.preventDefault();return}if(e.code==='KeyX'){endMg()}else if(mg.k==='bench'){if(e.code==='Space'||e.code==='Enter')lift()}else if(e.code==='KeyW')run();e.preventDefault();return}
  if(e.code==='Digit1')pick(0);if(e.code==='Digit2')pick(1);if(e.code==='Digit3')pick(2);
  if(e.code==='KeyF'&&!e.repeat)tapAct=true;keys.add(e.code);if(e.code==='Space'){e.preventDefault();if(!e.repeat&&jy<=0&&jv<=0&&!menuOpen)jv=jumpV()}});
 addEventListener('keyup',e=>{keys.delete(e.code);if(e.code==='KeyQ'&&qStart&&!qBtn){if(!qDone)dropStones(false);qStart=0}});
@@ -535,7 +535,7 @@ function tipData(){
 /* ---------- gym minigames ---------- */
 const $=id=>document.getElementById(id),mgEl=$('mg'),mgT=$('mgT'),mgI=$('mgI'),mgM=$('mgM'),mgZ=$('mgZ'),mgZ2=$('mgZ2'),mgZ3=$('mgZ3'),mgR=$('mgR'),mgC=$('mgC'),mgB=$('mgB'),mgXt=$('mgXt'),mgXf=$('mgXf');
 function addXp(kind,x){
- if(kind==='str'){S.sxp+=x;while(S.sxp>=need(S.str)){S.sxp-=need(S.str);S.str++;SFX.lvl();toast(`Strength level ${S.str}! Bowl ${kg(bowlCap())} kg · carry ${stCap()} stones · normal speed up to ${2+S.str}.`)}}
+ if(kind==='str'){S.sxp+=x;while(S.sxp>=need(S.str)){S.sxp-=need(S.str);S.str++;SFX.lvl();toast(`Strength level ${S.str}! Bowl ${kg(bowlCap())} kg · carry ${stCap()} stones · normal speed up to ${slowAt()} stones.`)}}
  else{S.exp+=x;while(S.exp>=need(S.end)){S.exp-=need(S.end);S.end++;SFX.lvl();toast(`Endurance level ${S.end}! Faster walking, sprinting and higher jumps.`)}}
 }
 function btn(t,f){const b=document.createElement('button');b.type='button';b.textContent=t;b.addEventListener('pointerdown',e=>{e.preventDefault();f()});mgB.appendChild(b)}
@@ -553,14 +553,14 @@ function newZone(){mg.zc=.2+Math.random()*.6}
 const zo=()=>Math.max(.65,1-.015*mg.combo),zg=()=>Math.max(.55,1-.02*mg.combo),zp=()=>Math.max(.5,1-.025*mg.combo);
 function lift(){
  if(!mg||mg.k!=='bench')return;const d=Math.abs(mg.pos-mg.zc);let base=0,nm='';
- if(d<.05*zp()){base=6+Math.floor(mg.combo/2);nm='Perfect!'}else if(d<.12*zg()){base=3+Math.floor(mg.combo/3);nm='Good'}else if(d<.2*zo()){base=1+Math.floor(mg.combo/6);nm='Ok'}
+ if(d<.05*zp()){base=5+Math.floor(mg.combo/3);nm='Perfect!'}else if(d<.12*zg()){base=2+Math.floor(mg.combo/4);nm='Good'}else if(d<.2*zo()){base=1+Math.floor(mg.combo/8);nm='Ok'}
  if(base){const x=base;mg.combo++;mg.gain+=x;addXp('str',x);mg.fb=`${nm} +${x} XP`;SFX.rep()}else{mg.combo=0;mg.fb='Missed! Combo lost';SFX.no()}
  newZone();
 }
 function run(){
  if(!mg||mg.k!=='tread')return;
  if(mg.over){if(mg.lock<=0)startMg('tread');return}
- mg.pace=Math.min(1,mg.pace+.075);mg.presses++;mg.acc++;SFX.step();if(mg.acc>=2){mg.acc=0;const x=2+Math.floor(mg.t/6);mg.gain+=x;addXp('end',x)}
+ mg.pace=Math.min(1,mg.pace+.075);mg.presses++;mg.acc++;SFX.step();if(mg.acc>=2){mg.acc=0;const x=2+Math.floor(mg.t/8);mg.gain+=x;addXp('end',x)}
 }
 function updMg(dt){
  const b=mg.k==='bench';
@@ -569,13 +569,13 @@ function updMg(dt){
   mg.pos+=mg.dir*(.75+.025*Math.min(mg.combo,14))*(1+.02*S.str)*dt;if(mg.pos>1){mg.pos=1;mg.dir=-1}if(mg.pos<0){mg.pos=0;mg.dir=1}
   mgZ.style.left=(mg.zc-.2*fo)*100+'%';mgZ.style.width=40*fo+'%';mgZ2.style.left=(mg.zc-.12*fg)*100+'%';mgZ2.style.width=24*fg+'%';mgZ3.style.left=(mg.zc-.05*fp)*100+'%';mgZ3.style.width=10*fp+'%';mgC.style.left=mg.pos*100+'%';
   const bo=Math.floor(mg.combo/3);
-  mgI.textContent=`${mg.fb||'Press Space when the bar is in the green'}\nCombo ${mg.combo} · Ok +${1+Math.floor(mg.combo/6)} · Good +${3+Math.floor(mg.combo/3)} · Perfect +${6+Math.floor(mg.combo/2)}`;
+  mgI.textContent=`${mg.fb||'Press Space when the bar is in the green'}\nCombo ${mg.combo} · Ok +${1+Math.floor(mg.combo/8)} · Good +${2+Math.floor(mg.combo/4)} · Perfect +${5+Math.floor(mg.combo/3)}`;
  }else if(!mg.over){
   mg.t+=dt;mg.pace-=(.19+.015*mg.t)*(1+.03*S.end)*dt;const r=Math.min(.9,.15+.022*mg.t);
   if(mg.pace<r){mg.over=1;mg.lock=.9}
   mgR.style.width=r*100+'%';mgZ.style.left='0';mgZ.style.width=Math.max(0,mg.pace)*100+'%';
-  mgI.textContent=`Spam Space! Keep the green above the red.\nSteps ${mg.presses} · ${mg.t.toFixed(0)}s · XP +${2+Math.floor(mg.t/6)} per 2 steps`;
- }else{mg.lock-=dt;mgI.textContent=`You collapsed after ${mg.t.toFixed(0)}s with ${mg.presses} steps.\n`+(mg.lock<=0?'Press Space to run again':'')}
+  mgI.textContent=`Spam W! Keep the green above the red.\nSteps ${mg.presses} · ${mg.t.toFixed(0)}s · XP +${2+Math.floor(mg.t/8)} per 2 steps`;
+ }else{mg.lock-=dt;mgI.textContent=`You collapsed after ${mg.t.toFixed(0)}s with ${mg.presses} steps.\n`+(mg.lock<=0?'Press W to run again':'')}
  const k=b?{n:'Strength',l:S.str,x:S.sxp}:{n:'Endurance',l:S.end,x:S.exp};
  mgXt.textContent=`${k.n} Lv ${k.l}: ${k.x}/${need(k.l)} xp · +${mg.gain} this session`;mgXf.style.width=k.x/need(k.l)*100+'%';
 }
@@ -608,7 +608,7 @@ const COIN='<svg viewBox="0 0 24 24" width="26" height="26"><ellipse cx="12" cy=
 const ICONB={box:'<svg viewBox="0 0 48 48" width="46" height="46"><rect x="6" y="14" width="36" height="26" fill="#b48a50" stroke="#4a2f14" stroke-width="2.5"/><path d="M6 23h36M6 31h36" stroke="#4a2f14" stroke-width="2"/><rect x="10" y="17" width="28" height="4" fill="#5a3a22"/><rect x="2" y="38" width="44" height="6" fill="#8a6234" stroke="#4a2f14" stroke-width="2"/></svg>',
  fan:'<svg viewBox="0 0 48 48" width="46" height="46"><rect x="22" y="22" width="4" height="20" fill="#aab4bf" stroke="#4a2f14" stroke-width="2"/><ellipse cx="24" cy="43" rx="9" ry="3" fill="#39424d" stroke="#4a2f14" stroke-width="2"/><circle cx="24" cy="16" r="12" fill="#d8c8a8" stroke="#4a2f14" stroke-width="2.5"/><path d="M24 16V6M24 16l9 5M24 16l-9 5" stroke="#4a2f14" stroke-width="2.5" stroke-linecap="round"/></svg>',
  sun:'☀️',pay:'💰',boots:'👡'};
-bp.innerHTML='<div class="bph"><button class="bpx" id="bpx" type="button" aria-label="Close">✕</button><div class="bpt"><h1 id="bpT"></h1><p id="bpS"></p></div><div class="bpw">'+COIN+'<b id="bpW" style="font-weight:400">0</b></div></div><div class="bpb"><div class="bpl"><input id="bpQ" type="text" placeholder="Search…  [F]" autocomplete="off"><div id="bpTabs" style="display:flex;flex-direction:column;gap:7px"></div></div><div class="bpr"><h2 id="bpH"></h2><div id="bpG"></div></div></div><div class="bpf"><div id="bpF1"></div><div>[1-9] pick a card · [Q] / [E] / arrows switch tabs · [F] search, [Enter] picks the first · [RMB] / [Esc] close</div></div>';
+bp.innerHTML='<div class="bph"><button class="bpx" id="bpx" type="button" aria-label="Close">✕</button><div class="bpt"><h1 id="bpT"></h1><p id="bpS"></p></div><div class="bpw">'+COIN+'<b id="bpW" style="font-weight:400">0</b></div></div><div class="bpb"><div class="bpl"><input id="bpQ" type="text" placeholder="Search…  [F]" autocomplete="off"><div id="bpTabs" style="display:flex;flex-direction:column;gap:7px"></div></div><div class="bpr"><h2 id="bpH"></h2><div id="bpG"></div></div></div><div class="bpf"><div id="bpF1"></div><div>[1-9] pick a card · [Q] / [Tab] / arrows switch tabs · [F] search, [Enter] picks the first · [E] / [RMB] / [Esc] close</div></div>';
 const bpQi=$('bpQ');let bpTab='molds',bpList=[],bpTabIds=[];
 $('bpx').onclick=()=>closeBP();bpQi.addEventListener('input',()=>drawBP());
 $('bpTabs').onclick=e=>{const b=e.target.closest('.bt');if(b){bpTab=b.dataset.t;bpQi.value='';drawBP()}};
@@ -736,7 +736,7 @@ function save(){if(resetting||!inGame)return;try{collect();let w;if(guest){const
 addEventListener('beforeunload',save);addEventListener('pagehide',save);document.addEventListener('visibilitychange',()=>{if(document.hidden)save()});
 function upd(){
  hudCr.innerHTML='$'+fmt(S.cr)+(game?' <small>shared</small>':'');
- l2.textContent=`Clay ${gk(S.clay)} / ${gk(bowlCap())} · Stones ${S.st}/${stCap()}${S.st+S.clay>2+S.str?' · heavy':''}`;
+ l2.textContent=`Clay ${gk(S.clay)} / ${gk(bowlCap())} · Stones ${S.st}/${stCap()}${S.st+S.clay>slowAt()?' · heavy':''}`;
  l4.textContent=`Strength Lv ${S.str} (${S.sxp}/${need(S.str)} xp) · Endurance Lv ${S.end} (${S.exp}/${need(S.end)} xp)`;
  let done=0;for(let l=0;l<layers;l++)done+=lc[l];
  l3.textContent=`Pyramid ${S.done+1} · layer ${Math.min(L+1,layers)}/${layers} · ${done}/${total} blocks`;
@@ -770,7 +770,7 @@ function frame(now){
   const wantY=ht(px,pz)+1.7+jy+(l>0&&jy<=0?Math.sin(bob)*.04:0);ey+=(wantY-ey)*Math.min(1,dt*12);
   if(freeLook&&document.pointerLockElement!==canvas&&!mg){const ax=mxp-.5,ay=myp-.5;if(Math.abs(ax)>.18)yaw-=Math.sign(ax)*(Math.abs(ax)-.18)*6.4*dt;if(Math.abs(ay)>.2)pitch=cl(pitch-Math.sign(ay)*(Math.abs(ay)-.2)*4.4*dt,-1.5,1.5)}
   camera.position.set(px,ey,pz);camera.rotation.set(pitch,yaw,0);
-  if(mg){rmbAct=false;target=null;ghost.visible=false;prm.style.display='none';if(tapAct){tapAct=false;mg.k==='bench'?lift():run()}updMg(dt)}
+  if(mg){rmbAct=false;target=null;ghost.visible=false;prm.style.display='none';if(tapAct){tapAct=false;if(mg.k==='bench')lift()}updMg(dt)}
   else{
    target=aim();
    if(build){camera.getWorldDirection(dir);rc.set(camera.position,dir);rc.far=14;if(rc.ray.intersectPlane(plane0,hp)&&hp.distanceTo(camera.position)<14){const x=Math.floor(hp.x/2)*2+1,z=Math.floor(hp.z/2)*2+1;bpos={x,z,ok:okAt(x,z,build.id)}}else bpos=null}else bpos=null;
