@@ -14,8 +14,9 @@ The service gives you a web address. Share that address; the game handles the re
 (Free Render services sleep when idle; the first visit after a nap takes ~30 s.)
 
 ## Playing together
-Menu > Co-op > "Host a game" shows a 5-letter code. Friends open the same web address and enter the code under Join.
-No server list. Up to 8 players per code (change with the MAX_PLAYERS env var).
+Main menu > Multiplayer > pick one of your worlds under "Host a game". The pause menu (Esc) shows the 5-letter code.
+Friends open the same web address, go to Multiplayer and enter the code under "Join a game". No server list. Up to 8 players per code (MAX_PLAYERS env var).
+Worlds are shared between single player and hosting. Money belongs to the world, so everyone in a room spends from and earns into the same wallet.
 
 ## Notes
 - Saves live in each player's own browser for that web address. Use Export / Import to move a save between addresses.
