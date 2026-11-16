@@ -1,4 +1,4 @@
-// Pyramid Works relay: serves the game (index.html) and relays co-op messages over WebSocket.
+// Pyramid Builder Online relay: serves the game (index.html) and relays co-op messages over WebSocket.
 // No dependencies. Needs Node 18+.  Run: node server.js   (PORT env var optional, default 3000)
 'use strict';
 const http = require('http');
@@ -162,4 +162,4 @@ setInterval(() => {                         // drop dead sockets
   }
 }, IDLE_MS);
 
-server.listen(PORT, () => console.log('Pyramid Works listening on http://localhost:' + PORT));
+server.listen(PORT, () => console.log('Pyramid Builder Online listening on http://localhost:' + PORT));

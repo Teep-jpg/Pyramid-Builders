@@ -1,8 +1,8 @@
 {
-  "name": "pyramid-works-online",
+  "name": "pyramid-builder-online",
   "version": "1.0.0",
   "private": true,
-  "description": "Pyramid Works with code-based co-op (relay + static game)",
+  "description": "Pyramid Builder Online with code-based co-op (relay + static game)",
   "main": "server.js",
   "scripts": { "start": "node server.js" },
   "engines": { "node": ">=18" }
