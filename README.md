@@ -3,27 +3,43 @@
 One tiny Node service does everything: it serves the game and relays co-op messages.
 No dependencies, no build step. Needs Node 18 or newer.
 
+## Try it on your own computer
+    node server.js
+Open http://localhost:3000. Friends on the same Wi-Fi can use http://YOUR-LAN-IP:3000.
+
+## Put it online (free tiers work)
+Upload these four files to a GitHub repo, then create a "Web Service" from it:
+- Render / Railway / Fly.io: build command none (or `npm install`), start command `node server.js`.
+The service gives you a web address. Share that address; the game handles the rest over wss:// automatically.
+(Free Render services sleep when idle; the first visit after a nap takes ~30 s.)
+
 ## Playing together
 Main menu > Multiplayer > pick one of your worlds under "Host a game". The pause menu (Esc) shows the 5-letter code.
 Friends open the same web address, go to Multiplayer and enter the code under "Join a game". No server list. Up to 8 players per code (MAX_PLAYERS env var).
 Worlds are shared between single player and hosting. Money belongs to the world, so everyone in a room spends from and earns into the same wallet.
-Market stand upgrades are team upgrades: one purchase applies to everyone in the room and is saved with the world.
+Brick Bazaar upgrades are team upgrades: one purchase applies to everyone in the room and is saved with the world.
 Placing bricks pays you; finishing a layer and finishing a pyramid pay bonuses that are split by how many bricks each player placed.
 
 ## Notes
 - Saves live in each player's own browser for that web address. Use Export / Import to move a save between addresses.
+- If the game page is hosted somewhere else (GitHub Pages, say) and only the relay is on a server, add
+  `<script>window.PW_RELAY='wss://your-relay.example.com/ws'</script>` before the main script in index.html.
 - The relay keeps nothing on disk; when everyone leaves a code, that room is gone (the host's save slot still has the world).
+- Inside claude.ai the game still uses claude.ai rooms; everywhere else it uses this relay.
+
+## Blueprint categories and the Brick Crate
+The hammer menu lists every planned category even when empty: Recent, Clay & Molds, Hauling, Belts, Power, Refining, Gold, Pyramid, Monuments, Rest & Gym, Fun & Chaos. Items today: Clay Mold (Clay & Molds), Brick Crate (Hauling) and Standing Fan (Power). The Brick Crate costs 40 coins (+10 % per crate you own), stores up to 40 bricks, and automatically pulls in the dried bricks of any mold within 3 m. Click it with empty hands to take bricks out. In co-op the host (or the lowest-id player) runs the pulling so players never double-collect.
 
 ## Pyramid facts (current build)
 - 26 layers, 51 bricks wide at the base, 23,426 bricks in total (the sum of the odd squares 1, 9, 25 ... 51²).
-- Placed stones are 2.1 m cubes, so the finished pyramid is about 55 m tall and 107 m wide. You walk up it like stairs: each layer is one stone inset from the one below.
-- It is centred directly east of the mud pit, level with the molds, a good way back from the river. Red-banded boundary posts with gold tips mark the corners (tall) and every ~13 m along each edge (short), so you can see the footprint before you build. The market is north of the mud pile, to the right when you face the river.
+- Placed stones are 2.1 m cubes, so the finished pyramid is about 55 m tall and 107 m wide. You climb it by mantling: jump at a layer's edge and you pull yourself up onto it (each layer is one stone inset from the one below). Walking off an edge makes you fall. Endurance no longer changes jump height.
+- It is centred directly east of the mud pit, level with the molds, a good way back from the river. Red-banded boundary posts with gold tips mark the corners (tall) and every ~13 m along each edge (short), so you can see the footprint before you build. The Brick Bazaar is north of the mud pile, to the right when you face the river.
 - Bonuses: every brick pays; finishing a layer and a pyramid pay shares split by bricks placed; the player who places the brick that lands on a milestone (25, 75, 100, 250, 500, 1000, 2500, 5000 bricks) gets that milestone bonus. Rarer milestones pay more per brick.
 
 # Roadmap (future plan)
 The target is a co-op "build a pyramid together" game: bricks start as mud, travel by hand, by throwing, by conveyor and by catapult, and are placed by you or by hired helpers. Each item below says what it is, how it plays, what has to change in the code, and what can go wrong. Items are in a sensible build order; each one is playable on its own.
 
-## 0. Foundations
+## 0. Foundations (do these first, they make everything else cheaper)
 **Entity framework.** Molds, fans, pits and dropped bricks are already "entities" with an id, a position and a small state, synced as upsert/remove messages. Every machine below (kiln, refill station, conveyor, catapult, helper) should be a new entity kind in the same system: one `make...()` function, one save row, one sync shape, one tooltip. Write a tiny registry (`KINDS[kind] = {make, save, load, data, apply, tip, blueprint}`) before adding more, so `entApply`, `collect`, `loadWorldEnts` and `drawBP` stop growing a branch per kind.
 **Tick and authority.** Anything that moves on its own (helpers, conveyors, thrown bricks) must be simulated by one machine only, otherwise players see different results. Rule: the host simulates and broadcasts compact state; guests only render and send "requests" (place, throw, buy). The relay already knows who the host is; add a `sim` message type at about 5 Hz and interpolate on guests.
 **Save format v4.** Add a `ver` field and a migration table (`migrate[3]=...`) so older saves keep loading. New world keys (`kilns`, `belts`, `helpers`, `gold`, `blessings`) go into the world list so they sync and save automatically.
@@ -50,7 +66,7 @@ The target is a co-op "build a pyramid together" game: bricks start as mud, trav
 *Risks:* helpers fighting the player for the same brick (give the player priority and let helpers skip a claimed task), and helpers placing bricks in the "wrong" order (rule: only the current layer, cells nearest the middle first).
 
 ## 4. Character progression
-**XP and levels.** Everything you do earns XP: placing, carrying, training. Levels feed three trees: *Speed* (walk and sprint, jump height), *Strength* (bowl size, stones carried, slow-down threshold) and *Endurance* (sprint time, how long you can train). Keep the gym minigames; they become a faster way to level, not the only way.
+**XP and levels.** Everything you do earns XP: placing, carrying, training. Levels feed three trees: *Speed* (walk and sprint), *Strength* (bowl size, stones carried, slow-down threshold) and *Endurance* (sprint time, how long you can train). Keep the gym minigames; they become a faster way to level, not the only way.
 **Per-player vs shared.** Stats stay per player (already true). Coins and the world's machines are shared in a hosted game. A host option "separate wallets" would be a good later toggle for groups who want it.
 *Code:* a `levels` object in the player save; a small level-up toast and sound exist already; add a one-screen stats panel (hold Tab).
 
@@ -73,7 +89,7 @@ The target is a co-op "build a pyramid together" game: bricks start as mud, trav
 - **Permissions:** host-only toggles for building, spending, and kicking, so a public room cannot be griefed.
 - **Testing:** a headless script that places bricks through the same functions as the game and checks the milestone and bonus maths and the save migrations.
 
-## Planned build order
+## Suggested build order
 1. **Foundations** (section 0): entity registry, host simulation tick, save v4.
 2. **Refill stations and kilns** (section 1): they create the bottleneck the rest solves.
 3. **Shabti helpers, refiller and hauler first** (section 3): the first real automation.
