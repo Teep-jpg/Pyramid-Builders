@@ -27,13 +27,19 @@ Placing bricks pays you; finishing a layer and finishing a pyramid pay bonuses t
 - The relay keeps nothing on disk; when everyone leaves a code, that room is gone (the host's save slot still has the world).
 - Inside claude.ai the game still uses claude.ai rooms; everywhere else it uses this relay.
 
+## Building rules
+Blueprint prices are flat (not upgrades): Clay Mold 20, Standing Fan 80, Brick Crate 40, and a refund returns what you paid. Placement snaps to a 1 m grid (R or the wheel rotates) and things may sit as close as their footprints allow. Molds are small (about 1.3 m), the starting mud pile is a small mound on the river bank, and molds start a few metres from it.
+
+## Golden bricks
+Each mold has a 4 % chance per brick of baking a golden one (decided from the mold's id and how many bricks it has made, so every player agrees). A ready golden brick glows gold in its mold. Golden bricks are carried, stored in crates and dropped like normal bricks, and pay 30 coins (× your pay upgrades) when placed; they stay gold in the pyramid. The bricks bar shows how many you carry, what they are worth, and which type is on top; scroll the mouse wheel to swap the top brick when you carry both types.
+
 ## Blueprint categories and the Brick Crate
 The hammer menu lists every planned category even when empty: Recent, Clay & Molds, Hauling, Belts, Power, Refining, Gold, Pyramid, Monuments, Rest & Gym, Fun & Chaos. Items today: Clay Mold (Clay & Molds), Brick Crate (Hauling) and Standing Fan (Power). The Brick Crate costs 40 coins (+10 % per crate you own), stores up to 40 bricks, and automatically pulls in the dried bricks of any mold within 3 m. Click it with empty hands to take bricks out. In co-op the host (or the lowest-id player) runs the pulling so players never double-collect.
 
 ## Pyramid facts (current build)
 - 26 layers, 51 bricks wide at the base, 23,426 bricks in total (the sum of the odd squares 1, 9, 25 ... 51²).
 - Placed stones are 2.1 m cubes, so the finished pyramid is about 55 m tall and 107 m wide. You climb it by mantling: jump at a layer's edge and you pull yourself up onto it (each layer is one stone inset from the one below). Walking off an edge makes you fall. Endurance no longer changes jump height.
-- It is centred directly east of the mud pit, level with the molds, a good way back from the river. Red-banded boundary posts with gold tips mark the corners (tall) and every ~13 m along each edge (short), so you can see the footprint before you build. The Brick Bazaar is north of the mud pile, to the right when you face the river.
+- It is centred directly east of the mud pit, level with the molds, a good way back from the river. Red-banded boundary posts with gold tips mark the four corners, so you can see the footprint before you build. The Brick Bazaar is north of the mud pile, to the right when you face the river.
 - Bonuses: every brick pays; finishing a layer and a pyramid pay shares split by bricks placed; the player who places the brick that lands on a milestone (25, 75, 100, 250, 500, 1000, 2500, 5000 bricks) gets that milestone bonus. Rarer milestones pay more per brick.
 
 # Roadmap (future plan)
@@ -98,3 +104,7 @@ The target is a co-op "build a pyramid together" game: bricks start as mud, trav
 6. **Catapults and builder helpers** (sections 2 and 3): upper-layer logistics.
 7. **XP trees** (section 4) alongside steps 2 to 6 as each new activity gives XP.
 8. **Monuments and blessings** (section 6): endgame, built last because it depends on everything above.
+
+
+## Crew board
+Hold **Tab** in game to see the crew board (player, title, coins earned, bricks placed, clay scooped, molds filled, stack and walking speed). Money now sits in the top-right coin box.
