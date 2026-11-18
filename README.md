@@ -28,7 +28,7 @@ Placing bricks pays you; finishing a layer and finishing a pyramid pay bonuses t
 - Inside claude.ai the game still uses claude.ai rooms; everywhere else it uses this relay.
 
 ## Building rules
-Blueprint prices are flat (not upgrades): Clay Mold 20, Standing Fan 80, Brick Crate 40, and a refund returns what you paid. Placement snaps to a 1 m grid (R or the wheel rotates) and things may sit as close as their footprints allow. Molds are small (about 1.3 m), the starting mud pile is a small mound on the river bank, and molds start a few metres from it.
+Blueprint prices are flat (not upgrades): Clay Mold 20, Standing Fan 80, Brick Crate 40, and a refund returns what you paid. Placement snaps to a 1 m grid (R or the wheel rotates) and things may sit as close as their footprints allow. Molds are small (about 1.3 m), there is no single starting pit any more: a dozen medium-to-large mud piles of different shapes and colours (dome, tall, flat, ridge, twin, crater) line the river bank, and molds start a few metres from the nearest one. Bought pits still work as before.
 
 ## Golden bricks
 Each mold has a 4 % chance per brick of baking a golden one (decided from the mold's id and how many bricks it has made, so every player agrees). A ready golden brick glows gold in its mold. Golden bricks are carried, stored in crates and dropped like normal bricks, and pay 30 coins (× your pay upgrades) when placed; they stay gold in the pyramid. The bricks bar shows how many you carry, what they are worth, and which type is on top; scroll the mouse wheel to swap the top brick when you carry both types.
@@ -138,3 +138,8 @@ Hold **Tab** in game to see the crew board (player, title, coins earned, bricks 
 - **Top-left feed:** `feed(label, highlight, tail)` shows stacked messages with a yellow bar (max 4, fade after 9 s). Used for several blueprints unlocking at once ("NEW BLUEPRINTS: ... hammer [3]") and for "NEW AT THE MARKET: Shabti Market".
 - **Bottom-left blueprint card:** when exactly one blueprint unlocks, `bpCard(def)` shows a larger card with its icon, long description and cost.
 - **Milestone banner:** `msBanner(count, coins)` shows "1,500 BRICKS!" with the percentage of the pyramid and the team coin reward, for every player in the room. Milestones are now 25, 75, 100, 250, 500, 1000, 1500, 2500, 5000, 7500, 10000, 15000, 20000 (banner from 100 up).
+
+## Collision and movement
+- Every solid, non-liquid thing has collision built from its real model: the Bazaar and Shabti stalls (counters, posts, shelves, roofs you can walk under), palms, rocks, mud piles, pyramid corner posts, molds, hoppers, fans, crates, treadmill, bench, props and bought pits. Placeable things follow the object when it is moved or turned. The river is not solid.
+- You can stand on anything you can jump onto, and small steps (under about 0.45 m) are walked up automatically. A single dropped brick is low enough to walk over; two or more stacked block you and can be jumped on.
+- Mantling (pulling yourself up) only works on pyramid blocks. Jump at a block face near the top of your jump and both arms reach for the edge, grip it and push you over. Jump height is slightly higher (8.3 instead of 7.5).
