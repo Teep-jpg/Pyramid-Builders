@@ -281,7 +281,7 @@ migrate();loadSlot(SLOT);
 const fmt=n=>{if(n<1000)return n<10&&n%1?n.toFixed(1):Math.floor(n)+'';const s=['K','M','B','T'];let i=-1;while(n>=1000&&i<s.length-1){n/=1000;i++}return n.toFixed(n<10?2:1)+s[i]};
 const money=d=>{if(!d)return;S.cr=Math.max(0,S.cr+d);if(d>0)S.ea=(S.ea||0)+d;if(game)send({t:'$',d})};
 const cl=(v,a,b)=>Math.min(b,Math.max(a,v)),kg=n=>''+Math.round(n*100)/100,gk=n=>n<1-1e-9?Math.round(n*1000)+' g':(t=>t.endsWith('.')?t+'0':t)(n.toFixed(3).replace(/0+$/,''))+' kg';
-const bowlCap=()=>1+.5*S.str,stCap=()=>3+S.str,slowK=()=>Math.min(4,Math.max(1,Math.round(stCap()/4))),slowAt=()=>stCap()-slowK(),need=l=>Math.floor(12*1.42**l),dryT=()=>8*.8**S.u.sun,pay=()=>1,spd=()=>5.5*(1+.03*Math.min(S.end,40)),jumpV=()=>8.3,wmul=()=>Math.max(.45,1-.06*Math.max(0,S.st+S.clay-slowAt())),scoop=()=>.325,boxCost=()=>20,pitCost=()=>60,fanCost=()=>80,crateCost=()=>40,rackCost=()=>70,hopCost=()=>160,MAXBOX=20,MAXPIT=4;
+const bowlCap=()=>1+.5*S.str,stCap=()=>3+S.str,slowK=()=>Math.min(4,Math.max(1,Math.round(stCap()/4))),slowAt=()=>stCap()-slowK(),need=l=>Math.floor(12*1.42**l),dryT=()=>8*.8**S.u.sun,pay=()=>1,spd=()=>5.5*(1+.03*Math.min(S.end,40)),jumpV=()=>7.5,wmul=()=>Math.max(.45,1-.06*Math.max(0,S.st+S.clay-slowAt())),scoop=()=>.325,boxCost=()=>20,pitCost=()=>60,fanCost=()=>80,crateCost=()=>40,rackCost=()=>70,hopCost=()=>160,MAXBOX=20,MAXPIT=4;
 /* Reach tiers: lend range (m), catch half-angle (degrees), extra drop distance (m) */
 const REACH=[[9,75,0],[12,95,1.5],[15,115,3],[18,135,4.5],[21,155,6]];
 const UPS=[
@@ -442,39 +442,7 @@ function drawWater(pal){const g=wCv.getContext('2d'),W=256,im=g.createImageData(
  for(let i=0;i<46;i++){const x=70+Math.random()*116,y=Math.random()*W,l=14+Math.random()*34;g.beginPath();g.moveTo(x,y);g.quadraticCurveTo(x+(Math.random()-.5)*8,y+l/2,x,y+l);g.stroke();if(y+l>W){g.beginPath();g.moveTo(x,y-W);g.quadraticCurveTo(x,y-W+l/2,x,y-W+l);g.stroke()}}
  wTex.needsUpdate=true}
 const river=new THREE.Mesh(new THREE.PlaneGeometry(22,700),new THREE.MeshStandardMaterial({map:wTex,transparent:true,roughness:.25,metalness:0,color:0xd4e0dc,depthWrite:false}));river.rotation.x=-Math.PI/2;river.position.set(RVX,WL,0);river.renderOrder=1;scene.add(river);
-/* ---------- mesh-accurate collision ----------
-   Every solid object gets a height field made from its real meshes (top and underside of every
-   part, so roofs can be walked under and hollow things stay hollow). Static things (stalls, palms, rocks, mud piles, posts)
-   are sampled once in world space; placeable things (molds, hoppers, fans, crates, treadmill, bench, props, bought pits)
-   are sampled once per kind in their own local frame and follow the object when it is moved or turned. */
-const COLS=[],palmPts=[],_pv=new THREE.Vector3(),FIELDS={};let _sc=1;
-function colMeshList(roots){const a=[];for(const r of(Array.isArray(roots)?roots:[roots])){r.updateMatrixWorld(true);r.traverse(o=>{if(o.isMesh&&o.visible!==false&&o.geometry&&o.geometry.type!=='PlaneGeometry'&&!o.userData.noCol){const m=o.material;if(m&&m.visible!==false)a.push(o)}})}return a}
-function meshBox(ms,ymax){let x0=1e9,z0=1e9,x1=-1e9,z1=-1e9,top=-1e9;for(const o of ms){const p=o.geometry.attributes.position;if(!p)continue;for(let i=0;i<p.count;i++){_pv.fromBufferAttribute(p,i).applyMatrix4(o.matrixWorld);if(_pv.y>top)top=_pv.y;if(_pv.y>ymax)continue;if(_pv.x<x0)x0=_pv.x;if(_pv.x>x1)x1=_pv.x;if(_pv.z<z0)z0=_pv.z;if(_pv.z>z1)z1=_pv.z}}return{x0,z0,x1,z1,top}}
-/* the height field is rasterised straight from the triangles (no ray casting), so it is fast and ignores which way a face points */
-function colField(ms,b,cs){const nx=Math.max(1,Math.ceil((b.x1-b.x0)/cs)),nz=Math.max(1,Math.ceil((b.z1-b.z0)/cs)),acc=new Array(nx*nz).fill(null);
- for(const o of ms){const g=o.geometry,pos=g.attributes.position,idx=g.index;if(!pos)continue;const n=idx?idx.count:pos.count,W=new Float32Array(pos.count*3);
-  for(let i=0;i<pos.count;i++){_pv.fromBufferAttribute(pos,i).applyMatrix4(o.matrixWorld);W[i*3]=_pv.x;W[i*3+1]=_pv.y;W[i*3+2]=_pv.z}
-  const mm=new Map(),put=(ix,iz,y)=>{if(ix<0||iz<0||ix>=nx||iz>=nz)return;const k=iz*nx+ix,r=mm.get(k);if(!r)mm.set(k,[y,y]);else{if(y<r[0])r[0]=y;if(y>r[1])r[1]=y}};
-  for(let t=0;t<n;t+=3){const i0=idx?idx.getX(t):t,i1=idx?idx.getX(t+1):t+1,i2=idx?idx.getX(t+2):t+2,x0=W[i0*3],y0=W[i0*3+1],z0=W[i0*3+2],x1=W[i1*3],y1=W[i1*3+1],z1=W[i1*3+2],x2=W[i2*3],y2=W[i2*3+1],z2=W[i2*3+2];
-   put(Math.floor((x0-b.x0)/cs),Math.floor((z0-b.z0)/cs),y0);put(Math.floor((x1-b.x0)/cs),Math.floor((z1-b.z0)/cs),y1);put(Math.floor((x2-b.x0)/cs),Math.floor((z2-b.z0)/cs),y2);
-   const det=(z1-z2)*(x0-x2)+(x2-x1)*(z0-z2);if(Math.abs(det)<1e-9)continue;
-   const ia=Math.max(0,Math.floor((Math.min(x0,x1,x2)-b.x0)/cs)),ib=Math.min(nx-1,Math.floor((Math.max(x0,x1,x2)-b.x0)/cs)),ja=Math.max(0,Math.floor((Math.min(z0,z1,z2)-b.z0)/cs)),jb=Math.min(nz-1,Math.floor((Math.max(z0,z1,z2)-b.z0)/cs));
-   for(let j=ja;j<=jb;j++)for(let i=ia;i<=ib;i++){const qx=b.x0+(i+.5)*cs,qz=b.z0+(j+.5)*cs,l1=((z1-z2)*(qx-x2)+(x2-x1)*(qz-z2))/det,l2=((z2-z0)*(qx-x2)+(x0-x2)*(qz-z2))/det,l3=1-l1-l2;
-    if(l1>=-1e-6&&l2>=-1e-6&&l3>=-1e-6)put(i,j,l1*y0+l2*y1+l3*y2)}}
-  mm.forEach((r,k)=>{let lo=r[0],hi=r[1];if(hi-lo<.08){const m=(lo+hi)/2;lo=m-.04;hi=m+.04}(acc[k]||(acc[k]=[])).push([lo,hi])})}
- const cells=acc.map(l=>{if(!l)return null;l.sort((a,c)=>a[0]-c[0]);const out=[];for(const q of l){const e=out.length?out[out.length-1]:null;if(e&&q[0]<=e[1]+.04)e[1]=Math.max(e[1],q[1]);else out.push([q[0],q[1]])}const f=[];for(const q of out)f.push(q[0],q[1]);return f});
- return{x0:b.x0,z0:b.z0,nx,nz,cs,cells}}
-function addStaticCol(ms,o){o=o||{};if(!ms.length)return;const b=meshBox(ms,o.ymax===undefined?1e9:o.ymax);if(b.x0>b.x1)return;const pad=o.pad||.05;b.x0-=pad;b.z0-=pad;b.x1+=pad;b.z1+=pad;
- const size=Math.max(b.x1-b.x0,b.z1-b.z0),cs=o.cs||Math.min(.3,Math.max(.1,size/40));COLS.push({f:colField(ms,b,cs),g:null,tag:o.tag})}
-function dynField(key,g){if(FIELDS[key])return FIELDS[key];const r=g.rotation.y,s=g.scale.x,px=g.position.x,pz=g.position.z;g.rotation.y=0;g.updateMatrixWorld(true);
- const ms=colMeshList(g),b=meshBox(ms,1e9);let f={x0:0,z0:0,nx:1,nz:1,cs:1,cells:[null]};
- if(b.x0<=b.x1){b.x0-=.05;b.z0-=.05;b.x1+=.05;b.z1+=.05;const cs=Math.min(.2,Math.max(.06,Math.max(b.x1-b.x0,b.z1-b.z0)/36));f=colField(ms,b,cs);
-  f.x0=(f.x0-px)/s;f.z0=(f.z0-pz)/s;f.cs/=s;for(const c of f.cells)if(c)for(let i=0;i<c.length;i++)c[i]/=s}
- g.rotation.y=r;g.updateMatrixWorld(true);FIELDS[key]=f;return f}
-function colCell(c,x,z){const f=c.f;let lx=x,lz=z,s=1;
- if(c.g){const g=c.g,th=g.rotation.y,dx=x-g.position.x,dz=z-g.position.z,co=Math.cos(th),si=Math.sin(th);s=g.scale.x;lx=(dx*co-dz*si)/s;lz=(dx*si+dz*co)/s}
- const ix=Math.floor((lx-f.x0)/f.cs),iz=Math.floor((lz-f.z0)/f.cs);if(ix<0||iz<0||ix>=f.nx||iz>=f.nz)return null;_sc=s;return f.cells[iz*f.nx+ix]}
-/* palms and rocks (trunks and boulders are solid) */
+/* palms and rocks (decor only, no collision) */
 const pr=(()=>{let q=12345;return()=>(q=(q*16807)%2147483647)/2147483647})();
 function palmGeo(h,lean,ang){const P=[],C=[],I=[];let v=0;const add=(x,y,z,c)=>{P.push(x,y,z);C.push(c[0],c[1],c[2]);return v++};
  const S=8,R=6,cx=Math.cos(ang),cz=Math.sin(ang),sp=t=>[cx*lean*h*t*t,h*t*(1-.08*t),cz*lean*h*t*t];
@@ -487,14 +455,14 @@ function palmGeo(h,lean,ang){const P=[],C=[],I=[];let v=0;const add=(x,y,z,c)=>{
    if(pv)I.push(pv[0],nw[0],pv[1],pv[1],nw[0],nw[1],pv[1],nw[1],pv[2],pv[2],nw[1],nw[2]);pv=nw}}
  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(P,3));g.setAttribute('color',new THREE.Float32BufferAttribute(C,3));g.setIndex(I);g.computeVertexNormals();return g}
 const palmM=new THREE.MeshStandardMaterial({vertexColors:true,roughness:.85,side:THREE.DoubleSide});
-function addPalm(x,z){const h=6+pr()*5,m=new THREE.Mesh(palmGeo(h,.12+pr()*.28,pr()*6.283),palmM);m.position.set(x,terr(x,z)-.1,z);m.rotation.y=pr()*6.283;scene.add(m);m.updateMatrixWorld(true);palmPts.push([x,z]);addStaticCol([m],{ymax:3.6,pad:.3,cs:.1})}
+function addPalm(x,z){const h=6+pr()*5,m=new THREE.Mesh(palmGeo(h,.12+pr()*.28,pr()*6.283),palmM);m.position.set(x,terr(x,z)-.1,z);m.rotation.y=pr()*6.283;scene.add(m)}
 for(let z=-120;z<=120;z+=15+pr()*12){addPalm(RVX-11-pr()*6,z+pr()*6);if(pr()<.5)addPalm(RVX-17-pr()*8,z+8)}
 for(let z=-118;z<=-48;z+=14+pr()*10)addPalm(RVX+10.5+pr()*3,z);for(let z=30;z<=118;z+=14+pr()*10)addPalm(RVX+10.5+pr()*3,z);
 for(let i=0;i<28;i++){const a=pr()*6.283,e=1.02+pr()*.3,x=EC[0]+Math.cos(a)*EA*e*1.02,z=EC[1]+Math.sin(a)*EB*e*1.02;if(Math.abs(x-RVX)<22)continue;addPalm(x,z)}
 {const rm=new THREE.MeshStandardMaterial({color:0xa08462,roughness:1,flatShading:true});
  for(let i=0;i<9;i++){const a=pr()*6.283,e=1.12+pr()*.35,x=EC[0]+Math.cos(a)*EA*e,z=EC[1]+Math.sin(a)*EB*e;if(Math.abs(x-RVX)<30)continue;const r=4+pr()*8,g=new THREE.IcosahedronGeometry(r,1),pp=g.attributes.position;
   for(let k=0;k<pp.count;k++){const f=1+.22*Math.sin(pp.getX(k)*.9+k)+.12*Math.cos(pp.getZ(k)*1.3);pp.setXYZ(k,pp.getX(k)*f,pp.getY(k)*f*.6,pp.getZ(k)*f)}g.computeVertexNormals();
-  const m=new THREE.Mesh(g,rm);m.position.set(x,terr(x,z)+r*.15,z);m.rotation.y=pr()*6;scene.add(m);m.updateMatrixWorld(true);addStaticCol([m],{cs:.8,pad:.3})}}
+  const m=new THREE.Mesh(g,rm);m.position.set(x,terr(x,z)+r*.15,z);m.rotation.y=pr()*6;scene.add(m)}}
 let seed=7;const rnd=()=>(seed=(seed*16807)%2147483647)/2147483647;
 function applyTheme(){const cs=getComputedStyle(document.documentElement),sk=new THREE.Color(cs.getPropertyValue('--sky').trim()),dark=(sk.r+sk.g+sk.b)/3<.3,sd=cs.getPropertyValue('--sand').trim();
  const P=dark?{top:0x0c1226,mid:0x1d2240,hor:0x3b3a4a}:{top:0xa3b6cf,mid:0xcdd5d7,hor:0xe2d0ae};
@@ -508,23 +476,7 @@ function mudGeo(){const g=new THREE.SphereGeometry(3.3,56,36),p=g.attributes.pos
   if(y>-.02)for(const b of bm)y+=b[3]*.5*Math.exp(-((x-b[0])**2+(z-b[1])**2)/(b[2]*b[2]));
   p.setXYZ(i,x*.46,(y-.1)*.46,z*.46)}
  g.computeVertexNormals();return g}
-const pit=new THREE.Mesh(mudGeo(),new THREE.MeshStandardMaterial({color:0xffffff,roughness:.92,map:mudTex}));/* template for bought pits only; the old starting pit is gone */
-/* varied mud piles: dome / tall / flat / ridge / twin / crater, each seeded so it keeps its own lumps */
-function mudGeoV(o){let q=o.seed*9301+49297;const rg=()=>(q=(q*16807)%2147483647)/2147483647;
- const g=new THREE.SphereGeometry(3.3,64,40),p=g.attributes.position,bm=[],nb=o.type==='twin'?2:4+((rg()*3)|0);
- for(let i=0;i<nb;i++){const a=rg()*6.283,r=1.2+rg()*1.8;bm.push([Math.cos(a)*r,Math.sin(a)*r,.7+rg()*.7,.5+rg()*.8])}
- const ph=[rg()*6,rg()*6,rg()*6];
- for(let i=0;i<p.count;i++){let x=p.getX(i),y=p.getY(i),z=p.getZ(i);y*=y<0?.06:.34;
-  const n=.16*Math.sin(x*1.7+z*.9+ph[0])+.12*Math.sin(z*2.3-x*1.1+ph[1])+.07*Math.sin(x*4.1+ph[2])*Math.sin(z*3.7),k=1+n*.55;x*=k;z*=k;y*=1+n*.9;
-  const rr=Math.hypot(x,z);
-  if(o.type==='tall'){y*=1.9;const sq=1-.25*Math.max(0,y)/1.4;x*=sq;z*=sq}
-  else if(o.type==='flat'){y*=.55;if(y>-.02)y+=.32*Math.exp(-((rr-2.5)**2)/.35)}
-  else if(o.type==='ridge'){x*=1.75;z*=.62;y*=1.15}
-  else if(o.type==='crater'){y*=1.15;if(y>-.02)y-=.85*Math.exp(-(rr*rr)/1.5)}
-  else if(o.type==='twin'&&y>-.02)y+=.9*Math.exp(-(((x-1.4)**2)+z*z)/1.6)+.7*Math.exp(-(((x+1.5)**2)+(z-.6)**2)/1.2);
-  if(y>-.02)for(const b of bm)y+=b[3]*.5*Math.exp(-((x-b[0])**2+(z-b[1])**2)/(b[2]*b[2]));
-  p.setXYZ(i,x*.46,(y-.1)*.46,z*.46)}
- g.computeVertexNormals();return g}
+const pit=new THREE.Mesh(mudGeo(),new THREE.MeshStandardMaterial({color:0xffffff,roughness:.92,map:mudTex}));pit.position.set(-22.4,-.1,-4);pit.userData={k:'pit'};scene.add(pit);
 const site=new THREE.Mesh(new THREE.PlaneGeometry(1,1),mat(0xb8a070,1));site.rotation.x=-Math.PI/2;site.position.set(CX,.015,CZ);scene.add(site);
 function label(t,x,y,z){const c=document.createElement('canvas');c.width=256;c.height=64;const g=c.getContext('2d');g.fillStyle='rgba(30,22,10,.78)';g.fillRect(0,0,256,64);g.fillStyle='#fff';g.font='600 30px sans-serif';g.textAlign='center';g.textBaseline='middle';g.fillText(t,128,34);
  const s=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(c),transparent:true}));s.scale.set(5,1.25,1);s.position.set(x,y,z);scene.add(s)}
@@ -576,20 +528,9 @@ function hopperTick(dt){
   if(!best)continue;const cp=best.q||1,a=Math.min(h.clay,(1-best.fill)*cp,.5);if(a<=0)continue;
   best.fill+=a/cp;h.clay-=a;if(best.fill>=.999){best.fill=1;best.st='wet';best.t=0}else best.st='fill';
   for(let i=0;i<3;i++)spark(best.g.position.x,.9,best.g.position.z);NT.up('box',best);NT.up('hopper',h)}}
-/* scoopable mud piles along the bank (not saved, not movable): medium to large, every one different */
-const mudPiles=(()=>{const pebM=new THREE.MeshStandardMaterial({color:0x6e5a48,roughness:1,flatShading:true}),rc2=new THREE.Raycaster(),dn=new THREE.Vector3(0,-1,0),out=[];
- const spec=[[-23.4,-57,'dome',1.25,1,.4,0xffffff,11],[-21.2,-47,'ridge',1.1,1.05,2.1,0xd9b08c,12],[-23.9,-36,'flat',1.5,1,4,0xa89080,13],[-20.6,-26,'tall',1.05,1.1,1,0xc9a27a,14],
-  [-23.2,-14,'twin',1.15,1,5.5,0x8a6a55,15],[-21.6,-2,'crater',1.3,1,3.3,0xe0c8a8,16],[-24,9,'dome',1.45,.9,.8,0xd9b08c,17],[-21,19,'ridge',1.2,1,2.7,0xa89080,18],
-  [-23.6,29,'tall',1.1,1.15,4.6,0xffffff,19],[-20.8,40,'flat',1.4,1.1,1.7,0xc9a27a,20],[-23.8,51,'twin',1.2,1,5.1,0xe0c8a8,21],[-21.4,62,'crater',1.25,1.05,.2,0x8a6a55,22]];
- for(const [x,z0,type,k,ky,rot,tint,seed] of spec){const rad=3.3*.46*k*(type==='ridge'?1.75:1);let z=z0;
-  for(let t=0;t<8&&palmPts.some(a=>Math.hypot(a[0]-x,a[1]-z)<rad+1.2);t++)z+=1.7;
-  const mat2=new THREE.MeshStandardMaterial({color:tint,roughness:.92,map:mudTex}),m=new THREE.Mesh(mudGeoV({type,seed}),mat2);
-  m.position.set(x,terr(x,z)-.1*k,z);m.scale.set(k,k*ky,k);m.rotation.y=rot;m.userData={k:'pit',sm:1,rad};scene.add(m);m.updateMatrixWorld(true);
-  if(type!=='dome'&&type!=='tall')for(let i=0;i<9;i++){const a=(seed*7+i*2.4)%6.283,r=rad*(.15+.7*((i*.37+seed*.11)%1)),wx=x+Math.cos(a)*r,wz=z+Math.sin(a)*r;rc2.set(new THREE.Vector3(wx,6,wz),dn);const h=rc2.intersectObject(m,false)[0];if(!h)continue;
-   const pb=new THREE.Mesh(new THREE.IcosahedronGeometry(.07+((i*.13+seed*.07)%1)*.09,0),pebM);pb.position.set(wx,h.point.y+.01,wz);pb.rotation.set(i,i*2,0);pb.userData.noCol=true;scene.add(pb)}
-  addStaticCol([m],{cs:.1,pad:.1});out.push(m)}
- return out})();
-const pits=[],fans=[],crates=[],hoppers=[],props=[];
+/* small scoopable mud patches around the starting pit (not saved, not movable) */
+const mudPatches=[[-22.8,-58,.5,.4],[-21.9,-46,.34,2.1],[-23.2,-34,.62,4],[-21.6,-24,.3,1],[-23,-14,.44,5.5],[-22.2,6,.58,3.3],[-23.4,16,.3,.8],[-21.8,27,.5,2.7],[-22.9,39,.36,4.6],[-22.3,52,.64,1.7],[-23.1,64,.32,5.1]].map(([x,z,k,r])=>{const m=new THREE.Mesh(pit.geometry,pit.material);m.position.set(x,-.1*k,z);m.scale.set(k,k*(.9+.3*((r*7)%1)),k);m.rotation.y=r;m.userData={k:'pit',sm:1};scene.add(m);return m});
+pit.uid='p0';const pits=[pit],fans=[],crates=[],hoppers=[],props=[];
 function kindOf(id){return id==='rack'?'box':id==='shabti'||id==='belt'?'prop':id}
 function takeDone(m){m.pk=(m.pk|0)+1;if(m.pk>=(m.q||1)){m.cyc=(m.cyc|0)+1;m.st='empty';m.fill=0;m.pk=0}}
 const FANA=.66,FCOS=Math.cos(FANA);
@@ -657,7 +598,6 @@ const gyms=[{k:'tread',uid:'tread',g:tm,hit:tmHit,rot:0,held:false,paid:0,dx:-1.
 /* brick bazaar stall */
 const dbl=c=>new THREE.MeshStandardMaterial({color:c,roughness:.9,side:THREE.DoubleSide}),cream=dbl(0xefe3c2),blue=dbl(0x2f4f9a),terra=mat(0xb5502a,.8),goldM=mat(0xe8b830,.35),redwood=mat(0x8a3f22,.85);
 const flapGeo=new THREE.BufferGeometry();flapGeo.setAttribute('position',new THREE.Float32BufferAttribute([-.5,0,0,.5,0,0,0,-.85,0],3));flapGeo.computeVertexNormals();
-const _bz0=scene.children.length;
 {const BZX=-10,BZZ=-22,bx=(w,h,d,m,x,y,z,par)=>{const o=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);o.position.set(x,y,z);(par||scene).add(o);return o};
  const dkWood=new THREE.MeshStandardMaterial({color:0x6a4529,roughness:.85,map:woodTex}),dkWood2=new THREE.MeshStandardMaterial({color:0x4a2f1c,roughness:.9,map:woodTex}),rope=mat(0xd8c08a,.95);
  /* canopy: gently sloped, tilts down toward the customers (+z) */
@@ -692,7 +632,6 @@ const _bz0=scene.children.length;
  {const c=document.createElement('canvas');c.width=512;c.height=112;const g=c.getContext('2d');g.fillStyle='#ead7a4';g.fillRect(0,0,512,112);g.strokeStyle='#8a5a2c';g.lineWidth=3;g.strokeRect(5,5,502,102);g.fillStyle='#3a2412';g.font='900 62px "Alfa Slab One",Georgia,serif';g.textAlign='center';g.textBaseline='middle';g.fillText('BRICK BAZAAR',256,60,470);
   const sg=new THREE.Mesh(new THREE.PlaneGeometry(3.7,.8),new THREE.MeshStandardMaterial({map:new THREE.CanvasTexture(c),roughness:.8}));sg.position.set(BZX,2.35,-20.055);scene.add(sg)}
 }
-addStaticCol(colMeshList(scene.children.slice(_bz0)),{cs:.12});
 const standHit=new THREE.Mesh(new THREE.BoxGeometry(9,2,3),hitMat);standHit.position.set(-10,1,-22);standHit.userData={k:'stand'};scene.add(standHit);
 function nearStand(){return Math.hypot(px+10,pz+22)<7}
 /* ---------- Shabti Market: stand, rotating faces, shabti models ---------- */
@@ -776,7 +715,7 @@ for(let i=0;i<3;i++){const x=(i-1)*2.1,ped=new THREE.Group();ped.position.set(x,
  const lc=shCv(512,256,()=>{}),sp=new THREE.Sprite(new THREE.SpriteMaterial({map:lc.t,transparent:true,depthWrite:false}));sp.scale.set(3.3,1.65,1);sp.position.set(x,3.2,.7);sp.visible=false;shS.add(sp);shLab.push({c:lc.c,g:lc.g,t:lc.t,sp});
  const h=new THREE.Mesh(new THREE.BoxGeometry(1.5,1.6,1.2),hitMat);h.position.set(x,2.05,.3);h.userData={k:'shface',i};shS.add(h);shHits.push(h)}
 const shHit=new THREE.Mesh(new THREE.BoxGeometry(6.8,1.3,2),hitMat);shHit.position.set(0,.65,.2);shHit.userData={k:'shstand'};shS.add(shHit);
-shS.updateMatrixWorld(true);addStaticCol(colMeshList(shS),{cs:.12});
+shS.updateMatrixWorld(true);
 function shDrawLabel(i){const f=shCur()[i],sold=shSoldArr()[i],L=shLab[i],g=L.g;g.clearRect(0,0,512,256);g.textAlign='center';g.textBaseline='middle';g.lineJoin='round';
  const T=(s,x,y,font,col)=>{g.font=font;g.lineWidth=7;g.strokeStyle='rgba(30,16,4,.92)';g.strokeText(s,x,y);g.fillStyle=col;g.fillText(s,x,y)};
  if(sold){T('SOLD',256,150,'900 78px Georgia,serif','#e8d9b0');L.t.needsUpdate=true;return}
@@ -816,14 +755,6 @@ function updStack(){if((S.gd|0)>S.st)S.gd=S.st;const n=Math.min(S.st,24),g=Math.
  for(let i=0;i<24;i++){const m=stkM[i];m.visible=i<n;if(i<n){const gold=S.top==='g'?i>=n-g:i<g;m.material=gold?gmat:smat;m.position.set(i%2?.008:-.008,.08+i*sp,0);m.rotation.y=((i*37)%11-5)*.014}}}
 const hands=new THREE.Group(),hL=new THREE.Mesh(new THREE.SphereGeometry(.09,12,10),mat(0xc9966b,.8)),hR=new THREE.Mesh(new THREE.SphereGeometry(.09,12,10),mat(0xc9966b,.8));hands.add(hL,hR);camera.add(hands);
 /* hand positions relative to the camera (eyes); the avatar others see uses the same numbers */
-const forearms=[0,1].map(()=>{const m=new THREE.Mesh(new THREE.CylinderGeometry(.045,.055,1,8),mat(0xc9966b,.8));m.visible=false;camera.add(m);return m}),_up=new THREE.Vector3(0,1,0),_ma=new THREE.Vector3(),_mb=new THREE.Vector3();
-/* mantle: both hands reach for the brick edge, grip it, then push down while the body is hauled over */
-function mantleArms(){if(!mant){forearms[0].visible=forearms[1].visible=false;return}stk.visible=false;
- const u=Math.min(1,mant.t/mant.d),e=q=>q*q*(3-2*q),lr=mant.y1-ey,rest=handRel(0,false,false);
- [hL,hR].forEach((h,i)=>{const sx=i?1:-1,lag=i*.1,a=e(Math.max(0,Math.min(1,u/.45-lag))),b=e(Math.max(0,Math.min(1,(u-.3-lag)/.5))),rx=rest[i][0],ry=rest[i][1],rz=rest[i][2],
-  rch=[sx*.28,Math.min(.12,lr+.16),-.78],psh=[sx*.3,Math.max(-1.15,lr+.05),-.42-.12*b],x1=rx+(rch[0]-rx)*a,y1=ry+(rch[1]-ry)*a,z1=rz+(rch[2]-rz)*a;
-  h.position.set(x1+(psh[0]-x1)*b,y1+(psh[1]-y1)*b,z1+(psh[2]-z1)*b)});
- [hL,hR].forEach((h,i)=>{const f=forearms[i];_ma.set((i?1:-1)*.3,-.42,-.12);_mb.copy(h.position).sub(_ma);const len=_mb.length();f.visible=true;f.position.copy(_ma).addScaledVector(_mb,.5);f.scale.set(1,len,1);f.quaternion.setFromUnitVectors(_up,_mb.normalize())})}
 function handRel(s,stack,bld){if(s===1)return[[.17,-.34,-.62],[.63,-.34,-.62]];if(s===2)return bld?[[.12,-.5,-.72],[.58,-.5,-.72]]:[[-.22,-.45,-.55],[.40,-.52,-.62]];return stack?[[.02,-.34,-.65],[.42,-.34,-.65]]:[[-.22,-.4,-.6],[.42,-.4,-.6]]}
 const ham=new THREE.Group();const hh=new THREE.Mesh(new THREE.CylinderGeometry(.03,.03,.55,8),mat(0x8a6a3e));hh.rotation.z=.5;ham.add(hh);const hd=new THREE.Mesh(new THREE.BoxGeometry(.28,.14,.14),mat(0x6b7480,.4));hd.position.set(-.14,.26,0);hd.rotation.z=.5;ham.add(hd);ham.position.set(-.1,0,0);held.add(ham);
 const mini=new THREE.Group();mini.position.set(-.05,-.18,-.1);held.add(mini);let miniId='';
@@ -867,10 +798,9 @@ const pGeo=new THREE.CylinderGeometry(.14,.3,1,4),pBand=new THREE.BoxGeometry(.4
 function mkPost(x,z,h){const g=new THREE.Group(),sh=new THREE.Mesh(pGeo,pM1);sh.scale.y=h;sh.position.y=h/2;sh.rotation.y=Math.PI/4;g.add(sh);
  const bd=new THREE.Mesh(pBand,pM2);bd.scale.y=h*.2;bd.position.y=h*.72;g.add(bd);
  const cp=new THREE.Mesh(pCap,pM3);cp.position.y=h+.25;cp.rotation.y=Math.PI/4;g.add(cp);g.position.set(x,0,z);posts.add(g)}
-function rebuildPosts(){while(posts.children.length)posts.remove(posts.children[0]);for(let i=COLS.length-1;i>=0;i--)if(COLS[i].tag==='post')COLS.splice(i,1);
+function rebuildPosts(){while(posts.children.length)posts.remove(posts.children[0]);
  const e=base*BS/2+1.4,n=8,w=(a,b)=>[CX+a*PC+b*PS,CZ-a*PS+b*PC];
  for(const [a,b] of [[-e,-e],[e,-e],[-e,e],[e,e]]){const q=w(a,b);mkPost(q[0],q[1],6.5)}
- for(const g of posts.children)addStaticCol(colMeshList(g),{tag:'post',cs:.08});
 }
 function setup(){
  goldSet.clear();(S.gb||[]).forEach(k=>goldSet.add(k));
@@ -885,28 +815,20 @@ function setup(){
  blocks.instanceMatrix.needsUpdate=true;blocks.instanceColor.needsUpdate=true;rebuildPosts();
 }
 setup();
-const SOLR=.32,STEPH=.45,HEADH=1.6,RING8=[[1,0],[-1,0],[0,1],[0,-1],[.7,.7],[-.7,.7],[.7,-.7],[-.7,-.7]];let FREF=0,dropBoxes=[];
-const entCol=(e,key,g)=>e.col||(e.col={f:dynField(key,g),g});
-function eachCol(fn){for(const c of COLS)fn(c);
- for(const o of gyms)if(!o.held&&!(mg&&mg.o===o))fn(entCol(o,o.k,o.g));
- for(const q of slots)if(!q.held)fn(entCol(q,'slot'+(q.q>1?4:1),q.g));
- for(const o of hoppers)if(!o.held)fn(entCol(o,'hopper',o.g));
- for(const o of fans)if(!o.held)fn(entCol(o,'fan',o.g));
- for(const o of crates)if(!o.held)fn(entCol(o,'crate',o.g));
- for(const o of props)if(!o.held)fn(entCol(o,o.type==='shabti'?'shabti'+(o.sd?o.sd.t:''):o.type,o.g));
- for(const p of pits)if(!p.userData.held)fn(entCol(p,'pit',p))}
-/* dropped bricks: a pile is one box. One brick is low enough to walk over; two or more block, and you can jump on top. */
-function refreshDrops(){const m=new Map();for(const d of drops){const k=d.px+','+d.pz;let r=m.get(k);if(!r){r={x:d.px,z:d.pz,hx:.52,hz:.52,y0:1e9,top:-1e9};m.set(k,r)}const lo=d.position.y-.14,hi=d.position.y+.14;if(lo<r.y0)r.y0=lo;if(hi>r.top)r.top=hi}dropBoxes=[...m.values()]}
-/* F = absolute feet height. A part blocks you when it reaches above a small step and below head height; otherwise you stand on it. */
-function hitAt(x,z,F){const lo=F+STEPH+.001,hi=F+HEADH;let hit=false;
- eachCol(c=>{if(hit)return;const a=colCell(c,x,z);if(!a)return;const s=_sc;for(let i=0;i<a.length;i+=2)if(a[i+1]*s>lo&&a[i]*s<hi){hit=true;return}});
- if(!hit)for(const d of dropBoxes)if(Math.abs(x-d.x)<d.hx&&Math.abs(z-d.z)<d.hz&&d.top>F+.3&&d.y0<hi){hit=true;break}
- return hit}
-function solidAt(x,z,F){if(hitAt(x,z,F))return true;for(const r of RING8)if(hitAt(x+r[0]*SOLR,z+r[1]*SOLR,F))return true;return false}
-function objTop(x,z){let t=0;const lim=FREF+STEPH;
- eachCol(c=>{const a=colCell(c,x,z);if(!a)return;const s=_sc;for(let i=0;i<a.length;i+=2){const tp=a[i+1]*s;if(tp<=lim&&tp>t)t=tp}});
- for(const d of dropBoxes)if(Math.abs(x-d.x)<d.hx&&Math.abs(z-d.z)<d.hz&&d.top<=FREF+.05&&d.top>t)t=d.top;
- return t}
+const SOLR=.35,SOLS=[[-10,-22,4.2,.95,1.2],[-14.8,-23.8,.2,.2,9],[-5.2,-23.8,.2,.2,9],[-14.8,-20.2,.2,.2,9],[-5.2,-20.2,.2,.2,9],
+ [2,-21.85,3.35,.93,1.27],[2,-23.6,3.3,.18,9],[-1.3,-23.7,.2,.2,9],[5.3,-23.7,.2,.2,9],[-1.3,-20.3,.2,.2,9],[5.3,-20.3,.2,.2,9],];
+function eachSolid(fn){
+ for(const o of SOLS)fn(o[0],o[1],o[2],o[3],o[4],0,o[4]<5);
+ for(const o of gyms)if(!o.held){const h=fh(o.uid,o.rot);fn(o.g.position.x,o.g.position.z,h[0]-.1,h[1]-.1,1.0,0,1)}
+ for(const q of slots)if(!q.held){const hh=q.q>1?1.15:.7;fn(q.g.position.x,q.g.position.z,hh,hh,.55,0,1)}
+ for(const o of hoppers)if(!o.held)fn(o.g.position.x,o.g.position.z,.75,.75,2,0,0);
+ for(const f of fans)if(!f.held)fn(f.g.position.x,f.g.position.z,.4,.4,2,1,0);
+ for(const c of crates)if(!c.held){const h=fh('crate',c.rot);fn(c.g.position.x,c.g.position.z,h[0]-.05,h[1]-.05,.9,0,1)}
+ for(const p of pits)if(!p.userData.held)fn(p.position.x,p.position.z,1.45,1.45,.4,1,1)}
+/* F = absolute feet height. Anything whose top is above your feet blocks you; once your feet are above the top you can stand on it. */
+function solidAt(x,z,F){const R=SOLR;let hit=false;
+ eachSolid((cx,cz,hx,hz,top,rd,st)=>{if(hit||F>=top-.05)return;if(rd?Math.hypot(x-cx,z-cz)<hx+R:(Math.abs(x-cx)<hx+R&&Math.abs(z-cz)<hz+R))hit=true});return hit}
+function objTop(x,z){let t=0;eachSolid((cx,cz,hx,hz,top,rd,st)=>{if(!st||top<=t)return;if(rd?Math.hypot(x-cx,z-cz)<hx:(Math.abs(x-cx)<hx&&Math.abs(z-cz)<hz))t=top});return t}
 function ht(x,z){const dx=x-CX,dz=z-CZ,i=Math.floor((dx*PC-dz*PS)/BS+base/2),j=Math.floor((dx*PS+dz*PC)/BS+base/2);return i<0||j<0||i>=base||j>=base?0:cols[j*base+i]*BS}
 const BODY=.45,RING=[[1,0],[-1,0],[0,1],[0,-1],[.7,.7],[-.7,.7],[.7,-.7],[-.7,-.7]];
 function pgB(x,z){let m=pg(x,z);for(const r of RING){const h=ht(x+r[0]*BODY,z+r[1]*BODY);if(h>m)m=h}return m}
@@ -1014,7 +936,7 @@ const rc=new THREE.Raycaster(),dir=new THREE.Vector3(),plane=new THREE.Plane(new
 let target=null,actCd=0;
 function aim(){
  camera.getWorldDirection(dir);rc.set(camera.position,dir);rc.far=6.5;
- const list=[...pits.filter(p=>!p.userData.held),...mudPiles,...drops,...gyms.filter(o=>!o.held).map(o=>o.hit),standHit,shHit,...(shOpen()?shHits.filter(h=>!shSoldArr()[h.userData.i]):[]),...slots.filter(s=>!s.held).map(s=>s.hit),...fans.filter(f=>!f.held).map(f=>f.hit),...crates.filter(c=>!c.held).map(c=>c.hit),...props.filter(c=>!c.held).map(c=>c.hit),...hoppers.filter(o=>!o.held).map(o=>o.hit)],h=rc.intersectObjects(list,false)[0];
+ const list=[...pits.filter(p=>!p.userData.held),...mudPatches,...drops,...gyms.filter(o=>!o.held).map(o=>o.hit),standHit,shHit,...(shOpen()?shHits.filter(h=>!shSoldArr()[h.userData.i]):[]),...slots.filter(s=>!s.held).map(s=>s.hit),...fans.filter(f=>!f.held).map(f=>f.hit),...crates.filter(c=>!c.held).map(c=>c.hit),...props.filter(c=>!c.held).map(c=>c.hit),...hoppers.filter(o=>!o.held).map(o=>o.hit)],h=rc.intersectObjects(list,false)[0];
  if(h)return h.object.userData;
  plane.constant=-L*BS;
  if(rc.ray.intersectPlane(plane,hp)&&hp.distanceTo(camera.position)<9){
@@ -1198,7 +1120,6 @@ function okAt(x,z,id){
  if(x<-24||x>150||z<-60||z>150)return false;
  if(Math.abs(x-CX)<base*BS/2+2.5&&Math.abs(z-CZ)<base*BS/2+2.5)return false;
  if(Math.abs(x+10)<7&&Math.abs(z+22)<5)return false;
- for(const m of mudPiles)if(Math.abs(x-m.position.x)<m.userData.rad+.7&&Math.abs(z-m.position.z)<m.userData.rad+.7)return false;
  const me=fh(id,brot),hit=(ox,oz,o)=>Math.abs(x-ox)<me[0]+o[0]-.02&&Math.abs(z-oz)<me[1]+o[1]-.02;
  for(const q of slots)if(!q.held&&hit(q.g.position.x,q.g.position.z,fh(q.q>1?'rack':'box',q.rot)))return false;
  for(const o of gyms)if(!o.held&&hit(o.g.position.x,o.g.position.z,fh(o.uid,o.rot)))return false;
@@ -1481,7 +1402,7 @@ if(!menuOpen)PLAY+=dt;dropFall(dt);netTick(dt);if(gStart&&!gDone&&performance.no
  if(!inGame){const a=now/1000*.05;camera.position.set(CX+Math.cos(a)*190,85,CZ+Math.sin(a)*190);camera.lookAt(CX,25,CZ)}
  if(!menuOpen&&!bpOpen){
   const fx=-Math.sin(yaw),fz=-Math.cos(yaw),rx=Math.cos(yaw),rz=-Math.sin(yaw);
-  FREF=gPrev+jy;refreshDrops();let l=0;
+  let l=0;
   if(fl){px=cl(px+fl.vx*dt,-170,170);pz=cl(pz+fl.vz*dt,-170,170);const d=Math.exp(-1.6*dt);fl.vx*=d;fl.vz*=d;if(Math.hypot(fl.vx,fl.vz)<.4)fl=null}
   if(!mg&&!mant){
    const ix=(keys.has('KeyD')?1:0)-(keys.has('KeyA')?1:0)+stick.x,iy=(keys.has('KeyW')?1:0)-(keys.has('KeyS')?1:0)+stick.y;
@@ -1490,8 +1411,8 @@ if(!menuOpen)PLAY+=dt;dropFall(dt);netTick(dt);if(gStart&&!gDone&&performance.no
     const ox=px,oz=pz,f1=pg(px,pz)+jy;let blk=0;
     if((pgB(tx,pz)-f1<=.7||pgB(tx,pz)<=pgB(px,pz)+.01)&&(!solidAt(tx,pz,f1)||solidAt(px,pz,f1)))px=tx;else blk=1;
     const f2=pg(px,pz)+jy;if((pgB(px,tz)-f2<=.7||pgB(px,tz)<=pgB(px,pz)+.01)&&(!solidAt(px,tz,f2)||solidAt(px,pz,f2)))pz=tz;else blk=1;
-    if(blk&&jy>.05){const ux=vx/l,uz=vz/l,dx=px+ux*1.1,dz=pz+uz*1.1,y1=ht(dx,dz),f3=pg(px,pz)+jy,d=y1-f3,wl=ht(px+ux*.75,pz+uz*.75);
-     if(wl>f3&&y1>pg(px,pz)+.7&&d>0&&d<=1.45){mant={t:0,d:.75,x0:px,z0:pz,x1:dx,z1:dz,y0:f3,y1};jv=0;SFX.step()}}
+    if(blk&&jy>.05){const ux=vx/l,uz=vz/l,dx=px+ux*1.1,dz=pz+uz*1.1,y1=pg(dx,dz),f3=pg(px,pz)+jy,d=y1-f3;
+     if(y1>pg(px,pz)+.7&&d>0&&d<=1.45){mant={t:0,d:.55,x0:px,z0:pz,x1:dx,z1:dz,y0:f3,y1};jv=0;SFX.step()}}
     bob+=dt*9;const mv=Math.hypot(px-ox,pz-oz);if(mv>0&&jy<=.02&&!mant){stD+=mv;if(stD>=1.7){stD=0;SFX.foot(pg(px,pz)>.1,bedDepth(px)>.4)}}}
   }
   {const g=pg(px,pz);if(!mant)jy=Math.max(0,jy+gPrev-g);gPrev=g}
@@ -1516,7 +1437,7 @@ if(!menuOpen)PLAY+=dt;dropFall(dt);netTick(dt);if(gStart&&!gDone&&performance.no
    updRings();renderTip(tipData());
   }
  }else{prm.style.display='none';ghost.visible=false;bghost.visible=grid.visible=false}
- const fr=S.clay/bowlCap();held.visible=!menuOpen&&!mg&&!mant;bowl.visible=sel===1&&!mant;hmud.visible=sel===1&&S.clay>0&&!mant;hmud.position.y=-.2+.17*fr;hmud.scale.setScalar(.7+.3*fr);updStack();hands.visible=!menuOpen&&!mg;{const r=handRel(sel,S.st>0,!!build);hL.position.set(r[0][0],r[0][1],r[0][2]);hR.position.set(r[1][0],r[1][1],r[1][2]);mantleArms()}ham.visible=sel===2&&!build&&!mant;updMini();shTick();
+ const fr=S.clay/bowlCap();held.visible=!menuOpen&&!mg;bowl.visible=sel===1;hmud.visible=sel===1&&S.clay>0;hmud.position.y=-.2+.17*fr;hmud.scale.setScalar(.7+.3*fr);updStack();hands.visible=!menuOpen&&!mg;{const r=handRel(sel,S.st>0,!!build);hL.position.set(r[0][0],r[0][1],r[0][2]);hR.position.set(r[1][0],r[1][1],r[1][2])}ham.visible=sel===2&&!build;updMini();shTick();
  hint.textContent=freeLook?'Mouse lock is unavailable here · move the mouse toward the screen edges to look':'Mouse released · click the game to capture it again';
  hint.style.display=(mode==='lock'&&!menuOpen&&!bpOpen&&document.pointerLockElement!==canvas)?'block':'none';
 
