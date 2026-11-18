@@ -37,8 +37,8 @@ Each mold has a 4 % chance per brick of baking a golden one (decided from the mo
 The hammer menu lists every planned category even when empty: Recent, Clay & Molds, Hauling, Belts, Power, Refining, Gold, Pyramid, Monuments, Rest & Gym, Fun & Chaos. Items today: Clay Mold (Clay & Molds), Brick Crate (Hauling) and Standing Fan (Power). The Brick Crate costs 40 coins (+10 % per crate you own), stores up to 40 bricks, and automatically pulls in the dried bricks of any mold within 3 m. Click it with empty hands to take bricks out. In co-op the host (or the lowest-id player) runs the pulling so players never double-collect.
 
 ## Pyramid facts (current build)
-- 26 layers, 51 bricks wide at the base, 23,426 bricks in total (the sum of the odd squares 1, 9, 25 ... 51²).
-- Placed stones are 2.1 m cubes, so the finished pyramid is about 55 m tall and 107 m wide. You climb it by mantling: jump at a layer's edge and you pull yourself up onto it (each layer is one stone inset from the one below). Walking off an edge makes you fall. Endurance no longer changes jump height.
+- 31 layers, 61 bricks wide at the base, 39,711 bricks in total (the sum of the odd squares 1, 9, 25 ... 61²). Pyramids already in progress from older saves finish at their old 51-wide size; the next one is the new size.
+- Placed stones are 2.1 m cubes, so the finished pyramid is about 65 m tall and 128 m wide. You climb it by mantling: jump at a layer's edge and you pull yourself up onto it (each layer is one stone inset from the one below). Walking off an edge makes you fall. Endurance no longer changes jump height.
 - It is centred directly east of the mud pit, level with the molds, a good way back from the river. Red-banded boundary posts with gold tips mark the four corners, so you can see the footprint before you build. The Brick Bazaar is north of the mud pile, to the right when you face the river.
 - Bonuses: every brick pays; finishing a layer and a pyramid pay shares split by bricks placed; the player who places the brick that lands on a milestone (25, 75, 100, 250, 500, 1000, 2500, 5000 bricks) gets that milestone bonus. Rarer milestones pay more per brick.
 
@@ -108,3 +108,33 @@ The target is a co-op "build a pyramid together" game: bricks start as mud, trav
 
 ## Crew board
 Hold **Tab** in game to see the crew board (player, title, coins earned, bricks placed, clay scooped, molds filled, stack and walking speed). Money now sits in the top-right coin box.
+
+## Update notes (0.9.x)
+- **Golden bricks** now appear 2 % of the time (was 4 %).
+- **Affected-object circles:** when you hold a blueprint of a fan, crate or hopper, aim at one, or place a mold, a small ring appears around every mold it affects (white for existing objects, green or red for the one you are placing).
+- **Audio:** the M key is gone. Pause > Options has Master, Music and Sound effects sliders (saved in your browser). Music is a quiet generated desert melody over a drone.
+- **Fans** push air in a 38-degree cone out of their front (the side with the cage ring); molds inside the cone, or within about 1 m of the fan, dry faster. The cone is drawn when you place or aim at a fan.
+- **Ghost preview** now shows the real model of what you are placing, tinted green or red, with a white arrow on the ground pointing at its front (the way a fan blows).
+- **Names:** the name box keeps exactly what you typed. If it is blank, a random name (Mason Mudpie, Sir Bricksalot, Soggy Sphinx...) is rolled each time you start, host or join a session, and is never saved or written into the box. Random names saved by older versions are forgotten on first load.
+- **Blueprint unlocks:** some blueprints need the team to have placed a minimum number of bricks on the pyramid (lifetime, all pyramids, all players, saved with the world as `tb`): Standing Fan 25, Brick Crate 50, Mold Rack 100, Clay Hopper 250. Locked blueprints are greyed out in the hammer menu with a progress bar, and a toast announces each unlock. To change or add a lock, set `req:N` on its entry in `BPS`. Existing worlds start with their current pyramid progress counted.
+- **Passing bricks:** face a teammate within 4.5 m and press **G** to give one brick (hold G to give everything that fits). The giver is only charged for what the receiver confirms fits in their bag, so nothing is lost if their bag is full.
+- **Brick piles:** dropped bricks now land in a pile. A brick dropped within 0.9 m of a pile joins it; piles grow 4 bricks per layer, turning 90 degrees each layer. Picking up from a pile takes the top brick. Piles save and sync like before.
+- **Co-op stats:** every guest sends their stats to the host on their own autosave (and when the host saves). The host stores them in its save, keyed by a per-browser player id, and gives them back when that player rejoins with lower progress (for example on a new browser).
+
+## Update notes (1.2)
+- **Brick Bazaar** now sells five team upgrades: Sweatband (training XP +20 % per level, ×2 at level 5), Sun-Drying Lore I (molds dry 20 % faster per level), Shabti Spells I (shabti walk/carry +25 % per level), Greased Rollers I (conveyors +25 % per level), Long Reach I (brick passing range 9 → 12 → 15 → 18 → 21 m, catch angle ±75° → ±95° → ... ±155°, drop distance +1.5 m per level). The old Master mason pay and Papyrus sandals upgrades are gone, so placed bricks pay a flat $1 and walking speed no longer has a coin upgrade. Levels already bought in those two are ignored.
+- **Placeholder models:** Conveyor (a cube, Belts tab, unlocks at 150 bricks, $60) and Shabti (a capsule, Hauling tab, unlocks at 500 bricks, $120). They place, rotate, move, refund, sync and save, but do nothing yet. `shabtiMul()` and `beltMul()` already return the upgrade multipliers for when they do.
+- **Bigger bonuses:** layer bonus is about 4× (and +25 % per finished pyramid), milestone bonuses are about 6× at 25 bricks growing to about 50× at 5,000, and the pyramid completion bonus is about 3×. Milestones were extended with 10,000, 20,000 and 30,000 bricks.
+
+## Update notes (1.3): Shabti Market
+- **Shabti are no longer a blueprint.** The placeholder Shabti blueprint is gone; you buy them at the new **Shabti Market** stand (east of the Brick Bazaar, same side as the river-facing path). It opens once the team has placed **400 bricks** (the shutter shows `n / 400` until then).
+- **Faces rotate every 3 minutes.** Three faces are on offer, rolled from the clock (`floor(Date.now()/180000)`) so everyone in a room sees the same stock. Tiers: **Clay** (about 60 %), **Lapis** (about 30 %), **Gold** (about 10 %). Each face has a name, 0-3 positive and 0-2 negative traits (display only for now) and three starting skills (Speed, Carry, Focus).
+- **Price = tier base + traits + skills.** Base: Clay 400, Lapis 800, Gold 1,250. Each positive trait +50, each negative -50, each skill point above or below the tier average about 12. Clay lands near 250-500, Lapis 730-960, Gold 1,290-1,470. Tune `SH_BASE`, `SH_SK`, `SH_POS`, `SH_NEG` in `index.html`.
+- **Buying puts the Shabti in your hand** (empty hands required). **Q** drops him on the ground, **LMB** on a dropped Shabti with empty hands picks him up again. While carrying one you cannot hold bricks or switch tools. Assigning him to a post or workout machine comes later.
+- Held Shabti save with the player (`hs`); the sold-state of the current stock saves with the world (`shs`) and syncs with a `shs` message.
+
+## Update notes (1.4): pyramid size and notifications
+- **Pyramid:** 26 layers, 51 stones wide at the base, 23,426 bricks in total (sum of odd squares 1 ... 51²), stones are now 2.5 m cubes, so the finished pyramid is 65 m tall (about 128 m wide). Pyramids already in progress keep their old grid size (up to 61 wide) but use the new stone size.
+- **Top-left feed:** `feed(label, highlight, tail)` shows stacked messages with a yellow bar (max 4, fade after 9 s). Used for several blueprints unlocking at once ("NEW BLUEPRINTS: ... hammer [3]") and for "NEW AT THE MARKET: Shabti Market".
+- **Bottom-left blueprint card:** when exactly one blueprint unlocks, `bpCard(def)` shows a larger card with its icon, long description and cost.
+- **Milestone banner:** `msBanner(count, coins)` shows "1,500 BRICKS!" with the percentage of the pyramid and the team coin reward, for every player in the room. Milestones are now 25, 75, 100, 250, 500, 1000, 1500, 2500, 5000, 7500, 10000, 15000, 20000 (banner from 100 up).
